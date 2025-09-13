@@ -20,7 +20,13 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role', // Tambahan: Role
+        'role', // Role untuk admin/customer
+        'dob', // Date of birth
+        'gender', // Male/Female
+        'address', // Alamat
+        'city', // Kota
+        'contact_no', // No HP
+        'paypal_id', // PayPal ID
     ];
 
     /**
@@ -40,5 +46,12 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'dob' => 'date', // Cast DOB ke date
     ];
+
+    // Custom method untuk cek login dengan name atau email
+    public function isValidLogin($login)
+    {
+        return $this->name === $login || $this->email === $login;
+    }
 }

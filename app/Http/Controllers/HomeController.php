@@ -11,7 +11,12 @@ class HomeController extends Controller
     public function index()
     {
         $kategoris = Kategori::all();
-        $produks = Produk::with(['kategori', 'toko'])->paginate(6); // Pastikan paginate() return LengthAwarePaginator
-        return view('halaman-produk', compact('produks', 'kategoris'));
+        $produks = Produk::with(['kategori', 'toko'])->paginate(6);
+
+        if (auth()->check() && auth()->user()->role === 'customer') {
+            return view('halaman-produk-customer', compact('produks', 'kategoris'));
+        }
+
+        return view('halaman-produk-guest', compact('produks', 'kategoris'));
     }
 }

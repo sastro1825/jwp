@@ -10,13 +10,6 @@ use Illuminate\Support\Facades\Storage;
 
 class AdminController extends Controller
 {
-    // Hapus constructor dengan middleware
-    // public function __construct()
-    // {
-    //     $this->middleware('auth');
-    //     $this->middleware('role:admin');
-    // }
-
     public function dashboard()
     {
         $jumlahCustomer = User::where('role', 'customer')->count();
@@ -27,7 +20,8 @@ class AdminController extends Controller
     public function manageCustomers()
     {
         $customers = User::where('role', 'customer')->get();
-        return view('admin.manage-customers', compact('customers'));
+        $jumlahCustomer = User::where('role', 'customer')->count(); // Tambahan stats
+        return view('admin.manage-customers', compact('customers', 'jumlahCustomer'));
     }
 
     public function manageKategori()
