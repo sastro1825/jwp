@@ -4,56 +4,32 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Mail\Mailables\Attachment;
 
 class LaporanMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $pdfPath;
+    public $pdfPath; // Path file PDF laporan
 
     /**
-     * Create a new message instance.
+     * Create a new message instance - untuk kirim laporan PDF
      */
     public function __construct($pdfPath)
     {
-        $this->pdfPath = $pdfPath;
+        $this->pdfPath = $pdfPath; // Simpan path PDF untuk attachment
     }
 
     /**
-     * Get the message envelope.
+     * Build the message - untuk email laporan
      */
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'Laporan Pembelian OSS - ' . now()->format('Y-m-d H:i'),
-        );
-    }
-
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.laporan',
-        );
-    }
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        return [
-            Attachment::fromStorage($this->pdfPath)
-                ->as('laporan-pembelian-' . now()->format('YmdHis') . '.pdf')
-                ->withMime('application/pdf'),
-        ];
+        return $this->subject('Laporan Pembelian OSS - Toko Alat Kesehatan') // Subject email
+                    ->view('emails.laporan') // View template email  
+                    ->attach($this->pdfPath, [ // Attach file PDF
+                        'as' => 'laporan-pembelian.pdf',
+                        'mime' => 'application/pdf',
+                    ]);
     }
 }

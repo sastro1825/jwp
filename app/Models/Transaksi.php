@@ -17,8 +17,15 @@ class Transaksi extends Model
         'pdf_path',
     ];
 
+    // Relasi ke user yang melakukan transaksi
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+    
+    // Relasi ke shipping order
+    public function shippingOrder()
+    {
+        return $this->hasOne(ShippingOrder::class);
     }
 }

@@ -11,7 +11,7 @@ class TokoSeeder extends Seeder
     {
         Toko::create([
             'nama' => 'Toko Alat Kesehatan Prima',
-            'user_id' => 2, // Customer sample ID 2
+            'user_id' => 3, // Customer sample ID 3
             'status' => 'approved',
             'alamat' => 'Jakarta',
         ]);
