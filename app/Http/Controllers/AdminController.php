@@ -37,7 +37,7 @@ class AdminController extends Controller
      */
     public function manageCustomers()
     {
-        // Ambil semua customer dengan pagination
+        // Ambil semua customer dengan pagination untuk performa yang baik
         $customers = User::where('role', 'customer')->paginate(10);
         $jumlahCustomer = User::where('role', 'customer')->count();
         
@@ -84,7 +84,7 @@ class AdminController extends Controller
         // Cari customer yang akan dihapus
         $customer = User::where('id', $id)->where('role', 'customer')->firstOrFail();
         
-        // Hapus customer beserta data terkait
+        // Hapus customer beserta data terkait (Laravel akan handle cascade)
         $customer->delete();
 
         return redirect()->route('admin.customers')->with('success', 'Customer berhasil dihapus.');
@@ -95,27 +95,28 @@ class AdminController extends Controller
      */
     public function manageKategori()
     {
-        // Ambil semua kategori untuk ditampilkan
+        // Ambil semua kategori untuk ditampilkan dengan pagination
         $kategoris = Kategori::paginate(10);
         
         return view('admin.manage-kategori', compact('kategoris'));
     }
 
     /**
-     * Store Kategori - simpan kategori baru
+     * Store Kategori - simpan kategori baru dengan category type
      */
     public function storeKategori(Request $request)
     {
-        // Validasi input form kategori baru
+        // Validasi input form kategori baru dengan category_type
         $request->validate([
             'nama' => 'required|string|max:255',
             'deskripsi' => 'nullable|string|max:1000',
             'harga' => 'required|numeric|min:0', // Harga kategori wajib diisi
+            'category_type' => 'required|in:obat-obatan,alat-kesehatan,suplemen-kesehatan,kesehatan-pribadi,perawatan-kecantikan,gizi-nutrisi,kesehatan-lingkungan', // Validasi category type
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi gambar
         ]);
 
         // Siapkan data untuk disimpan
-        $data = $request->only(['nama', 'deskripsi', 'harga']);
+        $data = $request->only(['nama', 'deskripsi', 'harga', 'category_type']);
 
         // Handle upload gambar jika ada
         if ($request->hasFile('gambar')) {
@@ -141,15 +142,16 @@ class AdminController extends Controller
     }
 
     /**
-     * Update Kategori - proses update kategori
+     * Update Kategori - proses update kategori dengan category type
      */
     public function updateKategori(Request $request, $id)
     {
-        // Validasi input form edit kategori
+        // Validasi input form edit kategori dengan category_type
         $request->validate([
             'nama' => 'required|string|max:255',
             'deskripsi' => 'nullable|string|max:1000',
             'harga' => 'required|numeric|min:0', // Harga kategori wajib diisi
+            'category_type' => 'required|in:obat-obatan,alat-kesehatan,suplemen-kesehatan,kesehatan-pribadi,perawatan-kecantikan,gizi-nutrisi,kesehatan-lingkungan', // Validasi category type
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -157,7 +159,7 @@ class AdminController extends Controller
         $kategori = Kategori::findOrFail($id);
         
         // Siapkan data untuk update
-        $data = $request->only(['nama', 'deskripsi', 'harga']);
+        $data = $request->only(['nama', 'deskripsi', 'harga', 'category_type']);
 
         // Handle upload gambar baru jika ada
         if ($request->hasFile('gambar')) {

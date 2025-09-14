@@ -8,6 +8,12 @@ use App\Http\Controllers\CustomerController;
 // Route utama OSS - tampilkan halaman produk untuk visitor/customer
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// Route untuk view detail produk via AJAX - untuk semua user
+Route::get('/produk/view/{id}', [HomeController::class, 'viewProduk'])->name('produk.view');
+
+// Route untuk filter kategori - untuk semua user
+Route::get('/kategori/{id}', [HomeController::class, 'index'])->name('kategori.filter');
+
 // Route dashboard default Breeze - untuk user yang sudah login
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -24,7 +30,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('/customers/{id}', [AdminController::class, 'updateCustomer'])->name('customers.update');
     Route::delete('/customers/{id}', [AdminController::class, 'deleteCustomer'])->name('customers.delete');
     
-    // Manage Kategori - CRUD kategori
+    // Manage Kategori - CRUD kategori dengan category type
     Route::get('/kategori', [AdminController::class, 'manageKategori'])->name('kategori');
     Route::post('/kategori/store', [AdminController::class, 'storeKategori'])->name('kategori.store');
     Route::get('/kategori/{id}/edit', [AdminController::class, 'editKategori'])->name('kategori.edit');

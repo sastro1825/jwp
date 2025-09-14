@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- Halaman Kelola Kategori --}}
+{{-- Halaman Kelola Kategori dengan Dropdown Category Type --}}
 <div class="container">
     <div class="row">
         <div class="col-12">
             <h1>Kelola Kategori</h1>
-            <p class="text-muted">Add/Remove/Update Item Category - dengan input harga kategori</p>
+            <p class="text-muted">Add/Remove/Update Item Category - dengan jenis kategori kesehatan</p>
         </div>
     </div>
 
@@ -59,15 +59,37 @@
                                    class="form-control @error('nama') is-invalid @enderror" 
                                    value="{{ old('nama') }}" 
                                    required 
-                                   placeholder="Contoh: Tensimeter">
+                                   placeholder="Contoh: Tensimeter Digital">
                             @error('nama')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
+                        {{-- Jenis Kategori Kesehatan --}}
+                        <div class="mb-3">
+                            <label for="category_type" class="form-label">Jenis Kategori <span class="text-danger">*</span></label>
+                            <select id="category_type" 
+                                    name="category_type" 
+                                    class="form-control @error('category_type') is-invalid @enderror" 
+                                    required>
+                                <option value="">Pilih Jenis Kategori...</option>
+                                <option value="obat-obatan" {{ old('category_type') == 'obat-obatan' ? 'selected' : '' }}>Obat-obatan</option>
+                                <option value="alat-kesehatan" {{ old('category_type') == 'alat-kesehatan' ? 'selected' : '' }}>Alat Kesehatan</option>
+                                <option value="suplemen-kesehatan" {{ old('category_type') == 'suplemen-kesehatan' ? 'selected' : '' }}>Suplemen Kesehatan</option>
+                                <option value="kesehatan-pribadi" {{ old('category_type') == 'kesehatan-pribadi' ? 'selected' : '' }}>Kesehatan Pribadi</option>
+                                <option value="perawatan-kecantikan" {{ old('category_type') == 'perawatan-kecantikan' ? 'selected' : '' }}>Perawatan & Kecantikan</option>
+                                <option value="gizi-nutrisi" {{ old('category_type') == 'gizi-nutrisi' ? 'selected' : '' }}>Gizi & Nutrisi Medis</option>
+                                <option value="kesehatan-lingkungan" {{ old('category_type') == 'kesehatan-lingkungan' ? 'selected' : '' }}>Kesehatan Lingkungan</option>
+                            </select>
+                            @error('category_type')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="form-text text-muted">Pilih jenis kategori produk kesehatan</small>
+                        </div>
+
                         {{-- Harga Kategori --}}
                         <div class="mb-3">
-                            <label for="harga" class="form-label">Harga Kategori <span class="text-danger">*</span></label>
+                            <label for="harga" class="form-label">Harga Patokan <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text">Rp.</span>
                                 <input type="number" 
@@ -139,8 +161,8 @@
                                         <th>ID</th>
                                         <th>Gambar</th>
                                         <th>Nama</th>
+                                        <th>Jenis</th>
                                         <th>Harga</th>
-                                        <th>Deskripsi</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
@@ -162,15 +184,18 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <strong>{{ $kategori->nama }}</strong>
+                                            <strong>{{ $kategori->nama }}</strong><br>
+                                            <small class="text-muted">{{ Str::limit($kategori->deskripsi ?? '-', 30) }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ $kategori->getCategoryTypeLabel() }}
+                                            </span>
                                         </td>
                                         <td>
                                             <span class="badge bg-success">
                                                 Rp {{ number_format($kategori->harga ?? 0, 0, ',', '.') }}
                                             </span>
-                                        </td>
-                                        <td>
-                                            {{ Str::limit($kategori->deskripsi ?? '-', 50) }}
                                         </td>
                                         <td>
                                             {{-- Tombol Edit --}}
@@ -231,7 +256,7 @@
                         <div class="text-center py-4">
                             <i class="bi bi-tags" style="font-size: 4rem; color: #ccc;"></i>
                             <h4 class="mt-3">Belum Ada Kategori</h4>
-                            <p class="text-muted">Mulai dengan menambahkan kategori produk pertama.</p>
+                            <p class="text-muted">Mulai dengan menambahkan kategori produk kesehatan pertama.</p>
                         </div>
                     @endif
                 </div>

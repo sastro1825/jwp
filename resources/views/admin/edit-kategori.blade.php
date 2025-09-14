@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- Form Edit Kategori --}}
+{{-- Form Edit Kategori dengan Category Type Dropdown --}}
 <div class="container">
     <div class="row">
         <div class="col-12">
@@ -59,9 +59,32 @@
                                 @enderror
                             </div>
 
-                            {{-- Harga Kategori --}}
+                            {{-- Jenis Kategori Kesehatan --}}
                             <div class="col-md-6 mb-3">
-                                <label for="harga" class="form-label">Harga Kategori <span class="text-danger">*</span></label>
+                                <label for="category_type" class="form-label">Jenis Kategori <span class="text-danger">*</span></label>
+                                <select id="category_type" 
+                                        name="category_type" 
+                                        class="form-control @error('category_type') is-invalid @enderror" 
+                                        required>
+                                    <option value="">Pilih Jenis Kategori...</option>
+                                    <option value="obat-obatan" {{ old('category_type', $kategori->category_type) == 'obat-obatan' ? 'selected' : '' }}>Obat-obatan</option>
+                                    <option value="alat-kesehatan" {{ old('category_type', $kategori->category_type) == 'alat-kesehatan' ? 'selected' : '' }}>Alat Kesehatan</option>
+                                    <option value="suplemen-kesehatan" {{ old('category_type', $kategori->category_type) == 'suplemen-kesehatan' ? 'selected' : '' }}>Suplemen Kesehatan</option>
+                                    <option value="kesehatan-pribadi" {{ old('category_type', $kategori->category_type) == 'kesehatan-pribadi' ? 'selected' : '' }}>Kesehatan Pribadi</option>
+                                    <option value="perawatan-kecantikan" {{ old('category_type', $kategori->category_type) == 'perawatan-kecantikan' ? 'selected' : '' }}>Perawatan & Kecantikan</option>
+                                    <option value="gizi-nutrisi" {{ old('category_type', $kategori->category_type) == 'gizi-nutrisi' ? 'selected' : '' }}>Gizi & Nutrisi Medis</option>
+                                    <option value="kesehatan-lingkungan" {{ old('category_type', $kategori->category_type) == 'kesehatan-lingkungan' ? 'selected' : '' }}>Kesehatan Lingkungan</option>
+                                </select>
+                                @error('category_type')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        {{-- Harga Kategori --}}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="harga" class="form-label">Harga Patokan <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp.</span>
                                     <input type="number" 
@@ -76,6 +99,16 @@
                                 @error('harga')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
+                            </div>
+
+                            {{-- Current Category Type Display --}}
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Jenis Saat Ini</label>
+                                <div class="form-control-plaintext">
+                                    <span class="badge bg-info fs-6">
+                                        {{ $kategori->getCategoryTypeLabel() }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -139,10 +172,21 @@
                                             <strong>ID Kategori:</strong> {{ $kategori->id }}
                                         </div>
                                         <div class="col-md-4">
-                                            <strong>Dibuat:</strong> {{ $kategori->created_at->format('d/m/Y H:i') }}
+                                            <strong>Jumlah Produk:</strong> {{ $kategori->produks->count() }}
                                         </div>
                                         <div class="col-md-4">
-                                            <strong>Terakhir Update:</strong> {{ $kategori->updated_at->format('d/m/Y H:i') }}
+                                            <strong>Dibuat:</strong> {{ $kategori->created_at->format('d/m/Y') }}
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-4">
+                                            <strong>Jenis Lama:</strong> {{ $kategori->getCategoryTypeLabel() }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Harga Lama:</strong> Rp {{ number_format($kategori->harga, 0, ',', '.') }}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Update Terakhir:</strong> {{ $kategori->updated_at->format('d/m/Y') }}
                                         </div>
                                     </div>
                                 </div>
