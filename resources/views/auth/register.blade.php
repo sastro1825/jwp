@@ -13,15 +13,23 @@
                             <label for="name" class="form-label">Username:</label>
                             <input id="name" type="text" name="name" class="form-control" value="{{ old('name') }}" required>
                         </div>
-                        <div class="mb-3 text-start position-relative">
+                        <div class="mb-3 text-start">
                             <label for="password" class="form-label">Password:</label>
-                            <input id="password" type="password" name="password" class="form-control" required>
-                            <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3 text-dark" toggle="#password" style="cursor: pointer; font-size: 1.2em;"></i>
+                            <div class="input-group"> {{-- Input group untuk ikon di kanan --}}
+                                <input id="password" type="password" name="password" class="form-control" required>
+                                <span class="input-group-text"> {{-- Input group text untuk ikon --}}
+                                    <i class="bi bi-eye text-dark" id="togglePassword" style="cursor: pointer;"></i> {{-- Ikon mata hitam, tengah kanan input --}}
+                                </span>
+                            </div>
                         </div>
-                        <div class="mb-3 text-start position-relative">
+                        <div class="mb-3 text-start">
                             <label for="password_confirmation" class="form-label">Retype-Password:</label>
-                            <input id="password_confirmation" type="password" name="password_confirmation" class="form-control" required>
-                            <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3 text-dark" toggle="#password_confirmation" style="cursor: pointer; font-size: 1.2em;"></i>
+                            <div class="input-group"> {{-- Input group untuk ikon di kanan --}}
+                                <input id="password_confirmation" type="password" name="password_confirmation" class="form-control" required>
+                                <span class="input-group-text"> {{-- Input group text untuk ikon --}}
+                                    <i class="bi bi-eye text-dark" id="toggleRetypePassword" style="cursor: pointer;"></i> {{-- Ikon mata hitam, tengah kanan input --}}
+                                </span>
+                            </div>
                         </div>
                         <div class="mb-3 text-start">
                             <label for="email" class="form-label">E-mail:</label>
@@ -79,14 +87,21 @@
 
 @push('scripts')
 <script>
-    document.querySelectorAll('[toggle]').forEach(toggle => {
-        toggle.addEventListener('click', function() {
-            const target = document.querySelector(this.getAttribute('toggle'));
-            const type = target.getAttribute('type') === 'password' ? 'text' : 'password';
-            target.setAttribute('type', type);
-            this.classList.toggle('bi-eye');
-            this.classList.toggle('bi-eye-slash');
-        });
+    // Fungsi toggle mata untuk password di register
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const password = document.getElementById('password');
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        this.classList.toggle('bi-eye');
+        this.classList.toggle('bi-eye-slash');
+    });
+    // Fungsi toggle mata untuk retype-password di register
+    document.getElementById('toggleRetypePassword').addEventListener('click', function() {
+        const password = document.getElementById('password_confirmation');
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        this.classList.toggle('bi-eye');
+        this.classList.toggle('bi-eye-slash');
     });
 </script>
 @endpush

@@ -10,14 +10,18 @@
                     <h4 class="card-subtitle mb-4">Selamat datang di Toko Alat Kesehatan</h4>
                     <form method="POST" action="{{ route('login') }}">
                         @csrf
-                        <div class="mb-3 text-start">
+                        <div class="mb-3 text-start"> {{-- Label di kiri --}}
                             <label for="login" class="form-label">User ID:</label>
                             <input id="login" type="text" name="login" class="form-control" value="{{ old('login') }}" required autofocus>
                         </div>
-                        <div class="mb-3 text-start position-relative">
+                        <div class="mb-3 text-start"> {{-- Label di kiri --}}
                             <label for="password" class="form-label">Password:</label>
-                            <input id="password" type="password" name="password" class="form-control" required>
-                            <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3 text-dark" toggle="#password" style="cursor: pointer; font-size: 1.2em;"></i>
+                            <div class="input-group"> {{-- Input group untuk ikon di kanan --}}
+                                <input id="password" type="password" name="password" class="form-control" required>
+                                <span class="input-group-text"> {{-- Input group text untuk ikon --}}
+                                    <i class="bi bi-eye text-dark" id="togglePassword" style="cursor: pointer;"></i> {{-- Ikon mata hitam, tengah kanan input --}}
+                                </span>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">LOGIN</button>
                     </form>
@@ -39,12 +43,13 @@
 
 @push('scripts')
 <script>
-    document.querySelector('[toggle="#password"]').addEventListener('click', function() {
-        const password = document.querySelector('#password');
+    // Fungsi toggle mata untuk password login
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const password = document.getElementById('password');
         const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
         password.setAttribute('type', type);
-        this.classList.toggle('bi-eye');
-        this.classList.toggle('bi-eye-slash');
+        this.classList.toggle('bi-eye'); // Ikon show (tanpa coret)
+        this.classList.toggle('bi-eye-slash'); // Ikon hide (dengan garis coret)
     });
 </script>
 @endpush
