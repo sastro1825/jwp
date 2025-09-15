@@ -6,11 +6,11 @@
     <div class="row">
         <div class="col-12">
             <h1 class="mb-4">Product Page - Toko Alat Kesehatan</h1>
-            <p class="text-muted">Selamat datang, {{ auth()->user()->name }}! Pilih produk kesehatan yang Anda butuhkan.</p>
+            <p class="text-muted">Selamat datang, {{ auth()->user()->name }}! Pilih kategori produk kesehatan yang Anda butuhkan.</p>
         </div>
     </div>
 
-    {{-- Alert Messages --}}
+    {{-- Alert Messages untuk feedback user --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -33,9 +33,17 @@
                     <h5 class="mb-0">Menu Customer</h5>
                 </div>
                 <div>
+                    {{-- Link ke keranjang --}}
                     <a href="{{ route('customer.keranjang') }}" class="btn btn-primary me-2">
                         <i class="bi bi-cart3"></i> Keranjang Belanja
+                        @php
+                            $jumlahKeranjang = \App\Models\Keranjang::where('user_id', auth()->id())->sum('jumlah');
+                        @endphp
+                        @if($jumlahKeranjang > 0)
+                            <span class="badge bg-danger">{{ $jumlahKeranjang }}</span>
+                        @endif
                     </a>
+                    {{-- Link ke akun customer --}}
                     <a href="{{ route('customer.account') }}" class="btn btn-secondary">
                         <i class="bi bi-person-circle"></i> My Account
                     </a>
@@ -46,43 +54,72 @@
 
     {{-- Main Content dengan Layout seperti SRS --}}
     <div class="row">
-        {{-- Product Display Area (Kolom Kiri) --}}
+        {{-- Product Display Area (Kolom Kiri) - HANYA Menampilkan Kategori Produk --}}
         <div class="col-md-9">
-            {{-- Tampilkan Kategori Produk --}}
+            {{-- Tampilkan Kategori Produk dengan Gambar, Harga, View, Buy sesuai SRS --}}
             @if($kategoris->count() > 0)
                 <div class="mb-4">
                     <h3>Kategori Produk</h3>
                     <div class="row">
                         @foreach($kategoris as $kategori)
                         <div class="col-md-4 col-lg-3 mb-3">
-                            <div class="card h-100 kategori-card">
-                                {{-- Gambar Kategori --}}
-                                <div class="card-body text-center">
+                            <div class="card h-100 kategori-card shadow-sm">
+                                {{-- Gambar Kategori dengan ukuran tetap --}}
+                                <div class="position-relative">
                                     @if($kategori->gambar)
-                                        <img src="{{ Storage::url($kategori->gambar) }}" 
+                                        <img src="{{ asset('storage/' . $kategori->gambar) }}" 
                                              alt="{{ $kategori->nama }}" 
-                                             class="img-fluid mb-2"
-                                             style="max-height: 80px; object-fit: contain;">
+                                             class="card-img-top"
+                                             style="height: 200px; object-fit: cover;">
                                     @else
-                                        <div class="bg-light d-flex align-items-center justify-content-center mb-2" 
-                                             style="height: 80px; border-radius: 5px;">
-                                            <i class="bi bi-heart-pulse text-primary" style="font-size: 2.5rem;"></i>
+                                        {{-- Placeholder jika tidak ada gambar --}}
+                                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                             style="height: 200px;">
+                                            <i class="bi bi-heart-pulse text-primary" style="font-size: 3rem;"></i>
                                         </div>
                                     @endif
                                     
-                                    <h6 class="card-title">{{ $kategori->nama }}</h6>
-                                    <span class="badge bg-success mb-2">
-                                        Mulai Rp {{ number_format($kategori->harga, 0, ',', '.') }}
-                                    </span>
+                                    {{-- Badge jenis kategori --}}
+                                    <div class="position-absolute top-0 end-0 m-2">
+                                        <span class="badge bg-info">{{ $kategori->getCategoryTypeLabel() }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body d-flex flex-column">
+                                    {{-- Nama Kategori --}}
+                                    <h6 class="card-title text-center">{{ $kategori->nama }}</h6>
+                                    
+                                    {{-- Harga Patokan --}}
+                                    <div class="text-center mb-3">
+                                        <span class="badge bg-success fs-6">
+                                            Mulai Rp {{ number_format($kategori->harga, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                    
+                                    {{-- Deskripsi singkat --}}
+                                    @if($kategori->deskripsi)
+                                        <p class="card-text text-muted small text-center">
+                                            {{ Str::limit($kategori->deskripsi, 50) }}
+                                        </p>
+                                    @endif
                                     
                                     {{-- Tombol View dan Buy sesuai SRS --}}
-                                    <div class="d-grid gap-1">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="viewKategori({{ $kategori->id }})">
-                                            View
-                                        </button>
-                                        <a href="{{ route('home', ['kategori_id' => $kategori->id]) }}" class="btn btn-sm btn-primary">
-                                            Buy
-                                        </a>
+                                    <div class="mt-auto">
+                                        <div class="d-grid gap-2">
+                                            {{-- Tombol View untuk melihat detail kategori --}}
+                                            <button class="btn btn-outline-primary btn-sm" 
+                                                    onclick="viewKategori({{ $kategori->id }})">
+                                                <i class="bi bi-eye"></i> View
+                                            </button>
+                                            
+                                            {{-- Tombol Buy untuk buy langsung dari kategori - PERBAIKAN ERROR --}}
+                                            <form action="{{ route('customer.buy.from.kategori', $kategori->id) }}" method="POST" style="display: inline;">
+                                                @csrf
+                                                <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                    <i class="bi bi-bag-plus"></i> Buy
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -90,99 +127,14 @@
                         @endforeach
                     </div>
                 </div>
+            @else
+                {{-- Tampilan jika tidak ada kategori --}}
+                <div class="text-center py-5">
+                    <i class="bi bi-heart-pulse" style="font-size: 5rem; color: #ccc;"></i>
+                    <h4 class="mt-3">Kategori Belum Tersedia</h4>
+                    <p class="text-muted">Silakan hubungi admin untuk menambahkan kategori produk.</p>
+                </div>
             @endif
-
-            {{-- Area Produk berdasarkan Kategori yang dipilih --}}
-            <div id="produkArea">
-                @if($produks->count() > 0)
-                    <div class="mb-4">
-                        <h4>Produk Tersedia 
-                            @if(request()->has('kategori_id'))
-                                @php
-                                    $selectedKategori = $kategoris->where('id', request('kategori_id'))->first();
-                                @endphp
-                                @if($selectedKategori)
-                                    <small class="text-muted">(Kategori: {{ $selectedKategori->nama }})</small>
-                                @endif
-                            @endif
-                        </h4>
-                        <div class="row" id="produkContainer">
-                            @foreach($produks as $produk)
-                            <div class="col-md-4 mb-3">
-                                <div class="card produk-card h-100">
-                                    {{-- Badge Kategori --}}
-                                    <div class="position-absolute top-0 start-0 m-2">
-                                        <span class="badge bg-primary">{{ $produk->kategori->nama }}</span>
-                                    </div>
-                                    
-                                    {{-- Gambar Produk (placeholder) --}}
-                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
-                                        <i class="bi bi-box text-muted" style="font-size: 3rem;"></i>
-                                    </div>
-
-                                    <div class="card-body d-flex flex-column">
-                                        {{-- Nama Produk dan Harga --}}
-                                        <h6 class="card-title">{{ $produk->nama }}</h6>
-                                        <p class="card-text text-muted small">ID: {{ $produk->id_produk }}</p>
-                                        
-                                        {{-- Harga Produk --}}
-                                        <h5 class="text-success mb-2">
-                                            Rp {{ number_format($produk->harga, 0, ',', '.') }}
-                                        </h5>
-                                        
-                                        {{-- Info Toko --}}
-                                        <small class="text-muted mb-2">
-                                            <i class="bi bi-shop"></i> {{ $produk->toko->nama ?? 'Toko Resmi' }}
-                                        </small>
-                                        
-                                        {{-- Tombol View dan Buy sesuai SRS --}}
-                                        <div class="mt-auto">
-                                            <div class="d-grid gap-1">
-                                                <button class="btn btn-sm btn-outline-primary" onclick="viewProduk({{ $produk->id }})">
-                                                    View
-                                                </button>
-                                                <button class="btn btn-sm btn-success" onclick="showBuyForm({{ $produk->id }}, '{{ $produk->nama }}')">
-                                                    Buy
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-
-                        {{-- Pagination --}}
-                        <div class="d-flex justify-content-center">
-                            {{ $produks->appends(request()->query())->links() }}
-                        </div>
-                    </div>
-                @else
-                    {{-- Tampilan jika tidak ada produk --}}
-                    <div class="text-center py-5">
-                        <i class="bi bi-box" style="font-size: 4rem; color: #ccc;"></i>
-                        <h4 class="mt-3">
-                            @if(request()->has('kategori_id'))
-                                Tidak Ada Produk dalam Kategori Ini
-                            @else
-                                Pilih Kategori
-                            @endif
-                        </h4>
-                        <p class="text-muted">
-                            @if(request()->has('kategori_id'))
-                                Produk dalam kategori ini sedang kosong atau belum tersedia.
-                            @else
-                                Pilih kategori di atas untuk melihat produk yang tersedia.
-                            @endif
-                        </p>
-                        @if(request()->has('kategori_id'))
-                            <a href="{{ route('home') }}" class="btn btn-primary">
-                                <i class="bi bi-arrow-left"></i> Lihat Semua Produk
-                            </a>
-                        @endif
-                    </div>
-                @endif
-            </div>
         </div>
 
         {{-- Sidebar Kategori (Kolom Kanan) sesuai SRS --}}
@@ -193,13 +145,12 @@
                 </div>
                 <div class="card-body">
                     <div class="list-group list-group-flush">
-                        {{-- Tampilkan Semua Produk --}}
-                        <a href="{{ route('home') }}" 
-                           class="list-group-item list-group-item-action {{ !request()->has('kategori_id') ? 'active' : '' }}">
+                        {{-- Tampilkan Semua Kategori --}}
+                        <div class="list-group-item list-group-item-action active">
                             <i class="bi bi-grid-3x3-gap me-2"></i>
-                            Semua Produk
-                            <span class="badge bg-primary rounded-pill float-end">All</span>
-                        </a>
+                            Semua Kategori
+                            <span class="badge bg-primary rounded-pill float-end">{{ $kategoris->count() }}</span>
+                        </div>
 
                         {{-- Filter berdasarkan Jenis Kategori --}}
                         @php
@@ -211,15 +162,61 @@
                                 <small class="text-muted fw-bold">{{ ucwords(str_replace('-', ' ', $type)) }}</small>
                             </div>
                             @foreach($kategorisByType as $kategori)
-                                <a href="{{ route('home', ['kategori_id' => $kategori->id]) }}" 
-                                   class="list-group-item list-group-item-action {{ request('kategori_id') == $kategori->id ? 'active' : '' }}">
-                                    <i class="bi bi-chevron-right me-2"></i>
-                                    {{ $kategori->nama }}
-                                    <span class="badge bg-secondary rounded-pill float-end">{{ $kategori->produks->count() }}</span>
-                                </a>
+                                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-chevron-right me-2"></i>
+                                        {{ $kategori->nama }}
+                                    </div>
+                                    {{-- Tombol Buy Mini di Sidebar - PERBAIKAN ERROR --}}
+                                    <form action="{{ route('customer.buy.from.kategori', $kategori->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-outline-primary" title="Buy {{ $kategori->nama }}">
+                                            <i class="bi bi-cart-plus"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             @endforeach
                         @endforeach
                     </div>
+                </div>
+            </div>
+
+            {{-- Info Keranjang Quick Stats --}}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-cart3"></i> Status Keranjang
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @php
+                        $keranjangItems = \App\Models\Keranjang::where('user_id', auth()->id())->get();
+                        $totalItems = $keranjangItems->sum('jumlah');
+                        $totalHarga = $keranjangItems->sum(function($item) {
+                            return $item->jumlah * $item->harga;
+                        });
+                    @endphp
+                    
+                    @if($totalItems > 0)
+                        <div class="text-center">
+                            <h4 class="text-primary">{{ $totalItems }}</h4>
+                            <p class="mb-1">Item dalam keranjang</p>
+                            <h5 class="text-success">Rp {{ number_format($totalHarga, 0, ',', '.') }}</h5>
+                            <small class="text-muted">Total sementara</small>
+                            
+                            <div class="d-grid mt-3">
+                                <a href="{{ route('customer.keranjang') }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-cart-check"></i> Lihat Keranjang
+                                </a>
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-center text-muted">
+                            <i class="bi bi-cart-x" style="font-size: 2rem;"></i>
+                            <p class="mb-0 mt-2">Keranjang kosong</p>
+                            <small>Pilih kategori untuk berbelanja</small>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -254,85 +251,21 @@
     </div>
 </div>
 
-{{-- Modal untuk View Detail Produk --}}
-<div class="modal fade" id="produkDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Detail Produk</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="produkDetailContent">
-                {{-- Content akan diload via AJAX --}}
-                <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                <button type="button" class="btn btn-success" id="buyFromModal">
-                    <i class="bi bi-cart-plus"></i> Masukkan ke Keranjang
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- Modal untuk Buy Form --}}
-<div class="modal fade" id="buyModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Masukkan ke Keranjang</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="buyForm" method="POST">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="produk_nama" class="form-label">Produk</label>
-                        <input type="text" id="produk_nama" class="form-control" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label for="jumlah" class="form-label">Jumlah <span class="text-danger">*</span></label>
-                        <input type="number" 
-                               id="jumlah" 
-                               name="jumlah" 
-                               class="form-control" 
-                               value="1" 
-                               min="1" 
-                               max="10" 
-                               required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-success" onclick="submitBuyForm()">
-                    <i class="bi bi-cart-plus"></i> Masukkan ke Keranjang
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 {{-- Modal untuk View Detail Kategori --}}
 <div class="modal fade" id="kategoriDetailModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Detail Kategori</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="kategoriDetailContent">
-                {{-- Content akan diload via AJAX --}}
+                {{-- Content akan diload via JavaScript --}}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                <button type="button" class="btn btn-primary" id="lihatProdukKategori">
-                    Lihat Produk dalam Kategori
+                <button type="button" class="btn btn-primary" id="buyFromModal">
+                    <i class="bi bi-cart-plus"></i> Beli Kategori Ini
                 </button>
             </div>
         </div>
@@ -342,118 +275,67 @@
 
 @push('scripts')
 <script>
-// Variable untuk menyimpan data produk saat ini
-let currentProdukId = null;
-
-// Fungsi untuk view detail produk via AJAX
-function viewProduk(id) {
-    currentProdukId = id;
-    
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('produkDetailModal'));
-    modal.show();
-    
-    // Load content via AJAX
-    fetch(`/produk/view/${id}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('produkDetailContent').innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
-                            ${data.gambar ? `<img src="${data.gambar}" class="img-fluid" style="max-height: 200px;">` : '<i class="bi bi-image" style="font-size: 4rem; color: #ccc;"></i>'}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <h5>${data.nama}</h5>
-                        <p class="text-muted">ID: ${data.id_produk}</p>
-                        <h4 class="text-success mb-3">${data.harga_formatted}</h4>
-                        <p><strong>Kategori:</strong> ${data.kategori}</p>
-                        <p><strong>Toko:</strong> ${data.toko}</p>
-                        <div class="alert alert-info">
-                            <h6>Deskripsi:</h6>
-                            <p class="mb-0">${data.deskripsi}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Update buy button in modal
-            document.getElementById('buyFromModal').onclick = function() {
-                showBuyForm(id, data.nama);
-            };
-        })
-        .catch(error => {
-            document.getElementById('produkDetailContent').innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    Gagal memuat detail produk. Silakan coba lagi.
-                </div>
-            `;
-        });
-}
-
-// Fungsi untuk menampilkan form buy
-function showBuyForm(produkId, produkNama) {
-    // Set form action
-    document.getElementById('buyForm').action = `/keranjang/tambah/${produkId}`;
-    
-    // Set produk nama
-    document.getElementById('produk_nama').value = produkNama;
-    
-    // Reset jumlah
-    document.getElementById('jumlah').value = 1;
-    
-    // Hide produk detail modal if open
-    const produkModal = bootstrap.Modal.getInstance(document.getElementById('produkDetailModal'));
-    if (produkModal) {
-        produkModal.hide();
-    }
-    
-    // Show buy modal
-    const buyModal = new bootstrap.Modal(document.getElementById('buyModal'));
-    buyModal.show();
-}
-
-// Fungsi untuk submit form buy
-function submitBuyForm() {
-    document.getElementById('buyForm').submit();
-}
+// Variable untuk menyimpan kategori yang sedang dilihat
+let currentKategoriId = null;
 
 // Fungsi untuk view detail kategori
 function viewKategori(id) {
+    currentKategoriId = id;
+    
     // Find kategori data dari server-side data
     @foreach($kategoris as $kategori)
         if (id === {{ $kategori->id }}) {
             const modal = new bootstrap.Modal(document.getElementById('kategoriDetailModal'));
             document.getElementById('kategoriDetailContent').innerHTML = `
-                <div class="text-center mb-3">
-                    @if($kategori->gambar)
-                        <img src="{{ Storage::url($kategori->gambar) }}" class="img-fluid mb-3" style="max-height: 150px;">
-                    @else
-                        <div class="bg-light d-flex align-items-center justify-content-center mb-3" style="height: 150px;">
-                            <i class="bi bi-heart-pulse text-primary" style="font-size: 4rem;"></i>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="text-center mb-3">
+                            @if($kategori->gambar)
+                                <img src="{{ asset('storage/' . $kategori->gambar) }}" class="img-fluid rounded" style="max-height: 250px;">
+                            @else
+                                <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 250px;">
+                                    <i class="bi bi-heart-pulse text-primary" style="font-size: 4rem;"></i>
+                                </div>
+                            @endif
                         </div>
-                    @endif
-                    <h5>{{ $kategori->nama }}</h5>
-                    <span class="badge bg-info mb-2">{{ $kategori->getCategoryTypeLabel() }}</span>
-                </div>
-                <div class="alert alert-info">
-                    <h6>Deskripsi:</h6>
-                    <p class="mb-2">{{ $kategori->deskripsi }}</p>
-                    <p class="mb-0"><strong>Harga Mulai:</strong> Rp {{ number_format($kategori->harga, 0, ',', '.') }}</p>
-                </div>
-                <div class="text-center">
-                    <p class="text-muted">
-                        <i class="bi bi-box"></i>
-                        Tersedia {{ $kategori->produks->count() }} produk dalam kategori ini
-                    </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>{{ $kategori->nama }}</h5>
+                        <span class="badge bg-info mb-3">{{ $kategori->getCategoryTypeLabel() }}</span>
+                        
+                        <div class="mb-3">
+                            <h6>Harga Kategori:</h6>
+                            <h4 class="text-success">Rp {{ number_format($kategori->harga, 0, ',', '.') }}</h4>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6>Deskripsi:</h6>
+                            <p class="text-muted">{{ $kategori->deskripsi ?: 'Tidak ada deskripsi' }}</p>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Info:</strong> Dengan membeli kategori ini, Anda akan mendapatkan produk sesuai kategori {{ $kategori->nama }} dengan harga yang tercantum.
+                        </div>
+                    </div>
                 </div>
             `;
             
-            // Update button to show products in category
-            document.getElementById('lihatProdukKategori').onclick = function() {
-                window.location.href = `{{ route('home') }}?kategori_id={{ $kategori->id }}`;
+            // PERBAIKAN ERROR: Update button untuk buy dari modal dengan parameter yang benar
+            document.getElementById('buyFromModal').onclick = function() {
+                // Submit form buy dari kategori dengan parameter yang benar
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url("buy-from-kategori") }}/' + {{ $kategori->id }};
+                
+                const token = document.createElement('input');
+                token.type = 'hidden';
+                token.name = '_token';
+                token.value = '{{ csrf_token() }}';
+                form.appendChild(token);
+                
+                document.body.appendChild(form);
+                form.submit();
             };
             
             modal.show();
@@ -471,6 +353,36 @@ document.addEventListener('DOMContentLoaded', function() {
             if (closeBtn) closeBtn.click();
         }, 5000);
     });
+    
+    // Add loading state untuk tombol buy
+    const buyForms = document.querySelectorAll('form[action*="buy-from-kategori"]');
+    buyForms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+        });
+    });
 });
+
+// Function untuk refresh keranjang stats
+function refreshKeranjangStats() {
+    // Reload bagian status keranjang jika diperlukan
+    fetch('{{ route("customer.keranjang") }}')
+        .then(response => response.text())
+        .then(data => {
+            // Update counter di navbar jika ada
+            const cartBadge = document.querySelector('.badge.bg-danger');
+            if (cartBadge) {
+                // Extract jumlah dari response atau reload page
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        })
+        .catch(error => {
+            console.log('Failed to refresh cart stats:', error);
+        });
+}
 </script>
 @endpush

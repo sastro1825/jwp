@@ -12,43 +12,70 @@
 
     {{-- Main Content dengan Layout seperti SRS --}}
     <div class="row">
-        {{-- Product Display Area (Kolom Kiri) --}}
+        {{-- Product Display Area (Kolom Kiri) - HANYA Menampilkan Kategori Produk --}}
         <div class="col-md-9">
-            {{-- Tampilkan Kategori Produk --}}
+            {{-- Tampilkan Kategori Produk dengan Gambar, Harga, View, Buy untuk Guest --}}
             @if($kategoris->count() > 0)
                 <div class="mb-4">
                     <h3>Kategori Produk</h3>
                     <div class="row">
                         @foreach($kategoris as $kategori)
                         <div class="col-md-4 col-lg-3 mb-3">
-                            <div class="card h-100 kategori-card">
-                                {{-- Gambar Kategori --}}
-                                <div class="card-body text-center">
+                            <div class="card h-100 kategori-card shadow-sm">
+                                {{-- Gambar Kategori dengan ukuran tetap --}}
+                                <div class="position-relative">
                                     @if($kategori->gambar)
-                                        <img src="{{ Storage::url($kategori->gambar) }}" 
+                                        <img src="{{ asset('storage/' . $kategori->gambar) }}" 
                                              alt="{{ $kategori->nama }}" 
-                                             class="img-fluid mb-2"
-                                             style="max-height: 80px; object-fit: contain;">
+                                             class="card-img-top"
+                                             style="height: 200px; object-fit: cover;">
                                     @else
-                                        <div class="bg-light d-flex align-items-center justify-content-center mb-2" 
-                                             style="height: 80px; border-radius: 5px;">
-                                            <i class="bi bi-heart-pulse text-primary" style="font-size: 2.5rem;"></i>
+                                        {{-- Placeholder jika tidak ada gambar --}}
+                                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                             style="height: 200px;">
+                                            <i class="bi bi-heart-pulse text-primary" style="font-size: 3rem;"></i>
                                         </div>
                                     @endif
                                     
-                                    <h6 class="card-title">{{ $kategori->nama }}</h6>
-                                    <span class="badge bg-success mb-2">
-                                        Rp {{ number_format($kategori->harga, 0, ',', '.') }}
-                                    </span>
+                                    {{-- Badge jenis kategori --}}
+                                    <div class="position-absolute top-0 end-0 m-2">
+                                        <span class="badge bg-info">{{ $kategori->getCategoryTypeLabel() }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body d-flex flex-column">
+                                    {{-- Nama Kategori --}}
+                                    <h6 class="card-title text-center">{{ $kategori->nama }}</h6>
                                     
-                                    {{-- Tombol View dan Buy sesuai SRS --}}
-                                    <div class="d-grid gap-1">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="viewKategori({{ $kategori->id }})">
-                                            View
-                                        </button>
-                                        <a href="{{ route('login') }}" class="btn btn-sm btn-primary">
-                                            Buy (Login Required)
-                                        </a>
+                                    {{-- Harga Patokan --}}
+                                    <div class="text-center mb-3">
+                                        <span class="badge bg-success fs-6">
+                                            Mulai Rp {{ number_format($kategori->harga, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                    
+                                    {{-- Deskripsi singkat --}}
+                                    @if($kategori->deskripsi)
+                                        <p class="card-text text-muted small text-center">
+                                            {{ Str::limit($kategori->deskripsi, 50) }}
+                                        </p>
+                                    @endif
+                                    
+                                    {{-- Tombol View dan Buy sesuai SRS untuk Guest --}}
+                                    <div class="mt-auto">
+                                        <div class="d-grid gap-2">
+                                            {{-- Tombol View untuk melihat detail kategori --}}
+                                            <button class="btn btn-outline-primary btn-sm" 
+                                                    onclick="viewKategori({{ $kategori->id }})">
+                                                <i class="bi bi-eye"></i> View
+                                            </button>
+                                            
+                                            {{-- Tombol Buy mengarah ke login --}}
+                                            <a href="{{ route('login') }}" 
+                                               class="btn btn-primary btn-sm">
+                                                <i class="bi bi-bag-plus"></i> Buy (Login Required)
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -56,71 +83,14 @@
                         @endforeach
                     </div>
                 </div>
+            @else
+                {{-- Tampilan jika tidak ada kategori --}}
+                <div class="text-center py-5">
+                    <i class="bi bi-heart-pulse" style="font-size: 5rem; color: #ccc;"></i>
+                    <h4 class="mt-3">Kategori Belum Tersedia</h4>
+                    <p class="text-muted">Silakan hubungi admin untuk menambahkan kategori produk.</p>
+                </div>
             @endif
-
-            {{-- Area Produk berdasarkan Kategori yang dipilih --}}
-            <div id="produkArea">
-                @if($produks->count() > 0)
-                    <div class="mb-4">
-                        <h4>Produk Tersedia</h4>
-                        <div class="row" id="produkContainer">
-                            @foreach($produks as $produk)
-                            <div class="col-md-4 mb-3">
-                                <div class="card produk-card h-100">
-                                    {{-- Badge Kategori --}}
-                                    <div class="position-absolute top-0 start-0 m-2">
-                                        <span class="badge bg-primary">{{ $produk->kategori->nama }}</span>
-                                    </div>
-                                    
-                                    {{-- Gambar Produk (placeholder) --}}
-                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
-                                        <i class="bi bi-box text-muted" style="font-size: 3rem;"></i>
-                                    </div>
-
-                                    <div class="card-body d-flex flex-column">
-                                        {{-- Nama Produk --}}
-                                        <h6 class="card-title">{{ $produk->nama }}</h6>
-                                        <p class="card-text text-muted small">ID: {{ $produk->id_produk }}</p>
-                                        
-                                        {{-- Harga tersembunyi untuk guest --}}
-                                        <div class="mb-2">
-                                            <div class="bg-light p-2 text-center rounded">
-                                                <i class="bi bi-eye-slash text-muted"></i>
-                                                <small class="text-muted d-block">Login untuk melihat harga</small>
-                                            </div>
-                                        </div>
-                                        
-                                        {{-- Tombol View dan Buy sesuai SRS --}}
-                                        <div class="mt-auto">
-                                            <div class="d-grid gap-1">
-                                                <button class="btn btn-sm btn-outline-primary" onclick="viewProduk({{ $produk->id }})">
-                                                    View
-                                                </button>
-                                                <a href="{{ route('login') }}" class="btn btn-sm btn-primary">
-                                                    Buy
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-
-                        {{-- Pagination --}}
-                        <div class="d-flex justify-content-center">
-                            {{ $produks->links() }}
-                        </div>
-                    </div>
-                @else
-                    {{-- Tampilan jika tidak ada produk --}}
-                    <div class="text-center py-5">
-                        <i class="bi bi-box" style="font-size: 4rem; color: #ccc;"></i>
-                        <h4 class="mt-3">Pilih Kategori</h4>
-                        <p class="text-muted">Pilih kategori di atas untuk melihat produk yang tersedia.</p>
-                    </div>
-                @endif
-            </div>
         </div>
 
         {{-- Sidebar Kategori (Kolom Kanan) sesuai SRS --}}
@@ -131,13 +101,12 @@
                 </div>
                 <div class="card-body">
                     <div class="list-group list-group-flush">
-                        {{-- Tampilkan Semua Produk --}}
-                        <a href="{{ route('home') }}" 
-                           class="list-group-item list-group-item-action {{ !request()->has('kategori_id') ? 'active' : '' }}">
+                        {{-- Tampilkan Semua Kategori --}}
+                        <div class="list-group-item list-group-item-action active">
                             <i class="bi bi-grid-3x3-gap me-2"></i>
-                            Semua Produk
-                            <span class="badge bg-primary rounded-pill float-end">{{ $kategoris->sum('produks_count') ?? 'All' }}</span>
-                        </a>
+                            Semua Kategori
+                            <span class="badge bg-primary rounded-pill float-end">{{ $kategoris->count() }}</span>
+                        </div>
 
                         {{-- Filter berdasarkan Jenis Kategori --}}
                         @php
@@ -149,12 +118,11 @@
                                 <small class="text-muted fw-bold">{{ ucwords(str_replace('-', ' ', $type)) }}</small>
                             </div>
                             @foreach($kategorisByType as $kategori)
-                                <a href="{{ route('home', ['kategori_id' => $kategori->id]) }}" 
-                                   class="list-group-item list-group-item-action {{ request('kategori_id') == $kategori->id ? 'active' : '' }}">
+                                <div class="list-group-item list-group-item-action">
                                     <i class="bi bi-chevron-right me-2"></i>
                                     {{ $kategori->nama }}
                                     <span class="badge bg-secondary rounded-pill float-end">{{ $kategori->produks->count() }}</span>
-                                </a>
+                                </div>
                             @endforeach
                         @endforeach
                     </div>
@@ -166,46 +134,40 @@
                 <div class="card-body text-center">
                     <i class="bi bi-person-plus" style="font-size: 3rem; color: #007bff;"></i>
                     <h6 class="mt-2">Bergabung dengan OSS</h6>
-                    <p class="small text-muted">Daftar sekarang untuk melihat harga dan berbelanja!</p>
+                    <p class="small text-muted">Daftar sekarang untuk melihat produk dan berbelanja!</p>
                     <div class="d-grid gap-2">
                         <a href="{{ route('register') }}" class="btn btn-primary btn-sm">
-                            Daftar Gratis
+                            <i class="bi bi-person-plus-fill"></i> Daftar Gratis
                         </a>
                         <a href="{{ route('login') }}" class="btn btn-outline-primary btn-sm">
-                            Login
+                            <i class="bi bi-box-arrow-in-right"></i> Login
                         </a>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-{{-- Modal untuk View Detail Produk --}}
-<div class="modal fade" id="produkDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Detail Produk</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="produkDetailContent">
-                {{-- Content akan diload via AJAX --}}
-                <div class="text-center">
-                    <div class="spinner-border" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
+            {{-- Info OSS untuk Guest --}}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Tentang OSS
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">OSS - Online Shopping System adalah toko alat kesehatan terpercaya yang menyediakan berbagai produk kesehatan berkualitas.</p>
+                    <ul class="small text-muted">
+                        <li>Produk kesehatan original</li>
+                        <li>Pembayaran aman (prepaid/postpaid)</li>
+                        <li>Pengiriman cepat</li>
+                        <li>Customer service 24/7</li>
+                    </ul>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                <a href="{{ route('login') }}" class="btn btn-primary">Login untuk Beli</a>
-            </div>
         </div>
     </div>
 </div>
 
-{{-- Modal untuk View Detail Kategori --}}
+{{-- Modal untuk View Detail Kategori untuk Guest --}}
 <div class="modal fade" id="kategoriDetailModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -214,7 +176,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="kategoriDetailContent">
-                {{-- Content akan diload via AJAX --}}
+                {{-- Content akan diload via JavaScript --}}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
@@ -227,64 +189,18 @@
 
 @push('scripts')
 <script>
-// Fungsi untuk view detail produk via AJAX
-function viewProduk(id) {
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('produkDetailModal'));
-    modal.show();
-    
-    // Load content via AJAX
-    fetch(`/produk/view/${id}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('produkDetailContent').innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
-                            ${data.gambar ? `<img src="${data.gambar}" class="img-fluid" style="max-height: 200px;">` : '<i class="bi bi-image" style="font-size: 4rem; color: #ccc;"></i>'}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <h5>${data.nama}</h5>
-                        <p class="text-muted">ID: ${data.id_produk}</p>
-                        <div class="mb-3">
-                            <div class="bg-light p-3 text-center rounded">
-                                <i class="bi bi-eye-slash text-muted"></i>
-                                <p class="text-muted mb-0">Login untuk melihat harga</p>
-                            </div>
-                        </div>
-                        <p><strong>Kategori:</strong> ${data.kategori}</p>
-                        <p><strong>Toko:</strong> ${data.toko}</p>
-                        <div class="alert alert-info">
-                            <h6>Deskripsi:</h6>
-                            <p class="mb-0">${data.deskripsi}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        })
-        .catch(error => {
-            document.getElementById('produkDetailContent').innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    Gagal memuat detail produk. Silakan coba lagi.
-                </div>
-            `;
-        });
-}
-
-// Fungsi untuk view detail kategori
+// Fungsi untuk view detail kategori untuk guest
 function viewKategori(id) {
-    // Find kategori data
+    // Find kategori data dari server-side data
     @foreach($kategoris as $kategori)
         if (id === {{ $kategori->id }}) {
             const modal = new bootstrap.Modal(document.getElementById('kategoriDetailModal'));
             document.getElementById('kategoriDetailContent').innerHTML = `
                 <div class="text-center mb-3">
                     @if($kategori->gambar)
-                        <img src="{{ Storage::url($kategori->gambar) }}" class="img-fluid mb-3" style="max-height: 150px;">
+                        <img src="{{ asset('storage/' . $kategori->gambar) }}" class="img-fluid mb-3" style="max-height: 200px;">
                     @else
-                        <div class="bg-light d-flex align-items-center justify-content-center mb-3" style="height: 150px;">
+                        <div class="bg-light d-flex align-items-center justify-content-center mb-3" style="height: 200px;">
                             <i class="bi bi-heart-pulse text-primary" style="font-size: 4rem;"></i>
                         </div>
                     @endif
@@ -294,12 +210,18 @@ function viewKategori(id) {
                 <div class="alert alert-info">
                     <h6>Deskripsi:</h6>
                     <p class="mb-2">{{ $kategori->deskripsi }}</p>
-                    <p class="mb-0"><strong>Harga Patokan:</strong> Rp {{ number_format($kategori->harga, 0, ',', '.') }}</p>
+                    <p class="mb-0"><strong>Harga Mulai:</strong> Rp {{ number_format($kategori->harga, 0, ',', '.') }}</p>
                 </div>
-                <p class="text-muted text-center">
-                    <i class="bi bi-info-circle"></i>
-                    Login untuk melihat produk dalam kategori ini dan melakukan pembelian.
-                </p>
+                <div class="text-center">
+                    <p class="text-muted">
+                        <i class="bi bi-box"></i>
+                        Tersedia {{ $kategori->produks->count() }} produk dalam kategori ini
+                    </p>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i>
+                        Login untuk melihat produk dalam kategori ini dan melakukan pembelian.
+                    </div>
+                </div>
             `;
             modal.show();
             return;
