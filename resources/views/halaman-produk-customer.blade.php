@@ -25,7 +25,7 @@
         </div>
     @endif
 
-    {{-- Quick Menu untuk Customer --}}
+    {{-- Quick Menu untuk Customer - Hapus My Account, tambah Riwayat Pesanan --}}
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -33,7 +33,7 @@
                     <h5 class="mb-0">Menu Customer</h5>
                 </div>
                 <div>
-                    {{-- Link ke keranjang --}}
+                    {{-- Link ke keranjang belanja dengan badge jumlah item --}}
                     <a href="{{ route('customer.keranjang') }}" class="btn btn-primary me-2">
                         <i class="bi bi-cart3"></i> Keranjang Belanja
                         @php
@@ -43,9 +43,9 @@
                             <span class="badge bg-danger">{{ $jumlahKeranjang }}</span>
                         @endif
                     </a>
-                    {{-- Link ke akun customer --}}
-                    <a href="{{ route('customer.account') }}" class="btn btn-secondary">
-                        <i class="bi bi-person-circle"></i> My Account
+                    {{-- Link ke riwayat pesanan (ganti My Account) --}}
+                    <a href="{{ route('customer.order.history') }}" class="btn btn-secondary">
+                        <i class="bi bi-clock-history"></i> Riwayat Pesanan
                     </a>
                 </div>
             </div>
@@ -61,6 +61,7 @@
                 <div class="mb-4">
                     <h3>Kategori Produk</h3>
                     <div class="row">
+                        {{-- Loop untuk menampilkan setiap kategori --}}
                         @foreach($kategoris as $kategori)
                         <div class="col-md-4 col-lg-3 mb-3">
                             <div class="card h-100 kategori-card shadow-sm">
@@ -112,7 +113,7 @@
                                                 <i class="bi bi-eye"></i> View
                                             </button>
                                             
-                                            {{-- Tombol Buy untuk buy langsung dari kategori - PERBAIKAN ERROR --}}
+                                            {{-- Tombol Buy untuk buy langsung dari kategori --}}
                                             <form action="{{ route('customer.buy.from.kategori', $kategori->id) }}" method="POST" style="display: inline;">
                                                 @csrf
                                                 <button type="submit" class="btn btn-primary btn-sm w-100">
@@ -167,7 +168,7 @@
                                         <i class="bi bi-chevron-right me-2"></i>
                                         {{ $kategori->nama }}
                                     </div>
-                                    {{-- Tombol Buy Mini di Sidebar - PERBAIKAN ERROR --}}
+                                    {{-- Tombol Buy Mini di Sidebar --}}
                                     <form action="{{ route('customer.buy.from.kategori', $kategori->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-outline-primary" title="Buy {{ $kategori->nama }}">
@@ -190,6 +191,7 @@
                 </div>
                 <div class="card-body">
                     @php
+                        // Ambil data keranjang untuk menampilkan statistik
                         $keranjangItems = \App\Models\Keranjang::where('user_id', auth()->id())->get();
                         $totalItems = $keranjangItems->sum('jumlah');
                         $totalHarga = $keranjangItems->sum(function($item) {
@@ -321,7 +323,7 @@ function viewKategori(id) {
                 </div>
             `;
             
-            // PERBAIKAN ERROR: Update button untuk buy dari modal dengan parameter yang benar
+            // Update button untuk buy dari modal dengan parameter yang benar
             document.getElementById('buyFromModal').onclick = function() {
                 // Submit form buy dari kategori dengan parameter yang benar
                 const form = document.createElement('form');

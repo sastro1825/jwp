@@ -53,7 +53,7 @@
 
     {{-- Content Email --}}
     <div class="content">
-        <h3>Halo {{ auth()->user()->name }},</h3>
+        <h3>Halo {{ $customer->name }},</h3>
         
         <p>Terima kasih telah berbelanja di <strong>OSS - Online Shopping System</strong>, toko alat kesehatan terpercaya.</p>
         
@@ -62,20 +62,22 @@
         <div class="info-box">
             <h4>Informasi Pembelian:</h4>
             <ul>
-                <li><strong>Tanggal Pembelian:</strong> {{ now()->format('d/m/Y H:i') }}</li>
-                <li><strong>Customer:</strong> {{ auth()->user()->name }}</li>
-                <li><strong>Email:</strong> {{ auth()->user()->email }}</li>
-                <li><strong>Metode Pembayaran:</strong> {{ ucfirst(session('metode_pembayaran', 'Tidak diketahui')) }}</li>
+                <li><strong>No. Transaksi:</strong> {{ $transaksi->id }}</li>
+                <li><strong>Tanggal Pembelian:</strong> {{ $transaksi->created_at->format('d/m/Y H:i') }}</li>
+                <li><strong>Customer:</strong> {{ $customer->name }}</li>
+                <li><strong>Email:</strong> {{ $customer->email }}</li>
+                <li><strong>Total Pembayaran:</strong> Rp {{ number_format($transaksi->total, 0, ',', '.') }}</li>
+                <li><strong>Metode Pembayaran:</strong> {{ $transaksi->metode_pembayaran == 'prepaid' ? 'Prepaid (Kartu/PayPal)' : 'Postpaid (COD)' }}</li>
             </ul>
         </div>
 
         <div class="info-box">
             <h4>Apa Selanjutnya?</h4>
             <ul>
-                <li>📧 <strong>Laporan PDF</strong> sudah dilampirkan pada email ini</li>
-                <li>📦 <strong>Pesanan</strong> akan diproses dalam 1-2 hari kerja</li>
-                <li>🚚 <strong>Pengiriman</strong> akan dilakukan setelah konfirmasi pembayaran (jika postpaid)</li>
-                <li>📱 <strong>Tracking</strong> akan dikirimkan via email setelah barang dikirim</li>
+                <li><strong>Laporan PDF</strong> sudah dilampirkan pada email ini</li>
+                <li><strong>Pesanan</strong> akan diproses dalam 1-2 hari kerja</li>
+                <li><strong>Pengiriman</strong> akan dilakukan setelah konfirmasi pembayaran (jika postpaid)</li>
+                <li><strong>Tracking</strong> akan dikirimkan via email setelah barang dikirim</li>
             </ul>
         </div>
 
@@ -83,7 +85,7 @@
         <ul>
             <li>Simpan laporan PDF ini sebagai bukti pembelian</li>
             <li>Untuk pembayaran postpaid, harap siapkan uang pas saat barang tiba</li>
-            <li>Hubungi customer service jika ada pertanyaan</li>
+            <li>Hubungi customer service jika ada pertanyaan: fajarstudent28@gmail.com</li>
         </ul>
 
         <p>Jika ada pertanyaan atau kendala, jangan ragu untuk menghubungi tim customer service kami.</p>
@@ -97,7 +99,7 @@
     {{-- Footer Email --}}
     <div class="footer">
         <p>&copy; {{ date('Y') }} OSS - Online Shopping System. Toko Alat Kesehatan Terpercaya.</p>
-        <p>Email: noreply@oss.com | Website: www.oss.com</p>
+        <p>Email: fajarstudent28@gmail.com | Website: www.oss.com</p>
         <p><em>Email ini dikirim secara otomatis, mohon tidak membalas email ini.</em></p>
     </div>
 </body>

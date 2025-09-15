@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use App\Models\User; // Tambahan: Import User model
 
 class LoginRequest extends FormRequest
 {
@@ -22,17 +21,20 @@ class LoginRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
      */
     public function rules(): array
     {
         return [
-            'login' => ['required', 'string'],
+            'login' => ['required', 'string'], // Support login dengan username atau email
             'password' => ['required', 'string'],
         ];
     }
 
     /**
      * Attempt to authenticate the request's credentials.
+     * Support login dengan username atau email
      *
      * @throws \Illuminate\Validation\ValidationException
      */
@@ -40,16 +42,19 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        $credentials = $this->only('login', 'password');
+        // Tentukan apakah input login adalah email atau username
+        $loginField = filter_var($this->input('login'), FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
+        
+        $credentials = [
+            $loginField => $this->input('login'),
+            'password' => $this->input('password'),
+        ];
 
-        // Cek dengan name atau email
-        $user = User::where('name', $credentials['login'])->first() ?? User::where('email', $credentials['login'])->first();
-
-        if (! $user || ! Auth::attempt(['email' => $user->email, 'password' => $credentials['password']], $this->boolean('remember'))) {
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'login' => __('auth.failed'),
+                'login' => trans('auth.failed'),
             ]);
         }
 

@@ -9,10 +9,8 @@ use App\Http\Controllers\CustomerController;
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
+| Routing untuk OSS - Online Shopping System
+| Routes dibagi berdasarkan role: public, admin, dan customer
 |
 */
 
@@ -75,7 +73,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/guestbook/reject/{id}', [AdminController::class, 'rejectFeedback'])->name('guestbook.reject');
     Route::delete('/guestbook/{id}', [AdminController::class, 'deleteFeedback'])->name('guestbook.delete');
     
-    // Manage Shipping Orders - kelola pengiriman sesuai SRS
+    // Manage Shipping Orders - kelola pengiriman sesuai SRS (DIPERBAIKI: Auto masuk dari checkout)
     Route::get('/shipping', [AdminController::class, 'manageShippingOrders'])->name('shipping');
     Route::get('/shipping/create/{transaksi_id}', [AdminController::class, 'createShippingOrder'])->name('shipping.create');
     Route::post('/shipping/store', [AdminController::class, 'storeShippingOrder'])->name('shipping.store');
@@ -87,30 +85,28 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 | Customer Routes
 |--------------------------------------------------------------------------
 | Routes untuk customer dengan middleware auth dan role customer
-| Customer dapat mengelola keranjang unified, checkout, feedback, dan account
+| Customer dapat mengelola keranjang, checkout, feedback, order history
 */
 Route::middleware(['auth', 'role:customer'])->name('customer.')->group(function () {
     
     // Buy dari kategori - untuk tombol buy langsung dari kategori
     Route::post('/buy-from-kategori/{kategori_id}', [CustomerController::class, 'buyFromKategori'])->name('buy.from.kategori');
     
-    // Keranjang unified - Add/Remove item from Cart sesuai SRS (produk dan kategori)
-    Route::post('/keranjang/tambah/{produk_id}', [CustomerController::class, 'tambahKeKeranjang'])->name('keranjang.tambah');
+    // Keranjang management - Add/Remove item from Cart sesuai SRS (hanya kategori)
     Route::get('/keranjang', [CustomerController::class, 'keranjang'])->name('keranjang');
     Route::patch('/keranjang/update/{keranjang_id}', [CustomerController::class, 'updateKeranjang'])->name('keranjang.update');
     Route::delete('/keranjang/hapus/{keranjang_id}', [CustomerController::class, 'hapusKeranjang'])->name('keranjang.hapus');
     
-    // Buy langsung produk - untuk tombol buy pada produk
-    Route::post('/buy-langsung/{produk_id}', [CustomerController::class, 'buyLangsung'])->name('buy.langsung');
-    
-    // Checkout unified - Payment dengan prepaid/postpaid sesuai SRS
+    // Checkout - Payment dengan prepaid/postpaid sesuai SRS (DIPERBAIKI: Auto-create shipping order)
     Route::post('/checkout', [CustomerController::class, 'checkout'])->name('checkout');
     
-    // Account management routes
+    // Order History - Riwayat pesanan (GANTI MY ACCOUNT) dengan tombol cancel order
+    Route::get('/order-history', [CustomerController::class, 'orderHistory'])->name('order.history');
     Route::post('/cancel-order/{id}', [CustomerController::class, 'cancelOrder'])->name('cancel.order');
     Route::get('/download-laporan/{transaksi_id}', [CustomerController::class, 'downloadLaporan'])->name('download.laporan');
+    
+    // Feedback customer - untuk guest book
     Route::post('/feedback', [CustomerController::class, 'submitFeedback'])->name('feedback');
-    Route::get('/account', [CustomerController::class, 'viewAccount'])->name('account');
 });
 
 /*
@@ -132,7 +128,7 @@ Route::get('/kategori/view/{id}', function($id) {
 | Authentication Routes
 |--------------------------------------------------------------------------
 | Routes untuk login, register, password reset, profile management
-| Menggunakan Laravel Breeze authentication
+| Menggunakan Laravel Breeze authentication dengan field tambahan
 */
 require __DIR__.'/auth.php';
 

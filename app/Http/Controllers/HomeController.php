@@ -78,7 +78,7 @@ class HomeController extends Controller
 
     /**
      * Buy langsung dari kategori tanpa lihat produk dulu
-     * Ambil produk pertama dari kategori dan masukkan ke keranjang
+     * Redirect ke customer controller untuk handle pembelian kategori
      */
     public function buyFromKategori($kategori_id)
     {
@@ -87,14 +87,7 @@ class HomeController extends Controller
             return redirect()->route('login')->with('error', 'Silakan login sebagai customer untuk berbelanja.');
         }
 
-        // Ambil produk pertama dari kategori ini
-        $produk = Produk::where('kategori_id', $kategori_id)->first();
-        
-        if (!$produk) {
-            return redirect()->back()->with('error', 'Tidak ada produk dalam kategori ini.');
-        }
-
-        // Redirect ke buy langsung dengan produk pertama dari kategori
-        return app(CustomerController::class)->buyLangsung($produk->id);
+        // Redirect ke method buyFromKategori di CustomerController
+        return app(CustomerController::class)->buyFromKategori($kategori_id);
     }
 }
