@@ -11,32 +11,28 @@ use Illuminate\Support\Facades\Log;
 class HomeController extends Controller
 {
     /**
-     * Tampilkan halaman home dengan logic redirect yang tepat
+     * Tampilkan halaman home dengan logic redirect yang tepat - TERMASUK KATEGORI TOKO
      */
     public function index()
     {
-        // Ambil semua kategori untuk ditampilkan
-        $kategoris = Kategori::all();
-
         // Cek apakah user sudah login
         if (Auth::check()) {
             $user = Auth::user();
             
             // Redirect berdasarkan role user yang sudah login
             if ($user->role === 'admin') {
-                // Admin diarahkan ke dashboard admin
                 return redirect()->route('admin.dashboard');
             } elseif ($user->role === 'customer') {
-                // Customer diarahkan ke area customer
                 return redirect()->route('customer.area');
             } elseif ($user->role === 'pemilik_toko') {
-                // Pemilik toko JUGA diarahkan ke area customer untuk berbelanja
-                // BUKAN ke dashboard toko
                 return redirect()->route('customer.area');
             }
         }
 
-        // Jika belum login, tampilkan halaman guest/visitor
+        // Ambil kategori admin (untuk guest)
+        $kategoris = Kategori::all();
+
+        // Jika belum login, tampilkan halaman guest
         return view('halaman-produk-guest', compact('kategoris'));
     }
 

@@ -452,7 +452,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Update Shipping Status
+     * Update Shipping Status - DIPERBAIKI untuk update status transaksi juga
      */
     public function updateShippingStatus(Request $request, $id)
     {
@@ -461,13 +461,33 @@ class AdminController extends Controller
             
             $validated = $request->validate([
                 'status' => 'required|in:pending,shipped,delivered,cancelled',
+                'courier' => 'nullable|string|max:100',
+                'shipped_date' => 'nullable|date',
+                'delivered_date' => 'nullable|date',
                 'notes' => 'nullable|string|max:1000',
             ]);
 
-            $shipping->update($validated);
+            // Update data shipping
+            $shipping->update([
+                'status' => $validated['status'],
+                'courier' => $validated['courier'] ?? $shipping->courier,
+                'shipped_date' => $validated['shipped_date'] ? \Carbon\Carbon::parse($validated['shipped_date']) : $shipping->shipped_date,
+                'delivered_date' => $validated['delivered_date'] ? \Carbon\Carbon::parse($validated['delivered_date']) : $shipping->delivered_date,
+                'notes' => $validated['notes'] ?? $shipping->notes,
+            ]);
+
+            // Update status transaksi berdasarkan status shipping
+            if ($validated['status'] === 'delivered') {
+                $shipping->transaksi->update(['status' => 'completed']);
+            } elseif ($validated['status'] === 'cancelled') {
+                $shipping->transaksi->update(['status' => 'cancelled']);
+            } elseif ($validated['status'] === 'shipped') {
+                $shipping->transaksi->update(['status' => 'processing']);
+            }
 
             return redirect()->route('admin.shipping')->with('success', 'Status pengiriman berhasil diupdate.');
         } catch (\Exception $e) {
+            Log::error('Error updating shipping status: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal mengupdate status pengiriman.');
         }
     }

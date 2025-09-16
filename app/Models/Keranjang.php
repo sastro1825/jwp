@@ -12,15 +12,16 @@ class Keranjang extends Model
     protected $table = 'keranjangs'; // Nama tabel keranjang
 
     /**
-     * The attributes that are mass assignable - untuk keranjang yang support kategori
+     * The attributes that are mass assignable - DIPERBAIKI untuk support kategori dan produk
      */
     protected $fillable = [
         'user_id',        // ID user yang memiliki keranjang
+        'produk_id',      // ID produk (untuk buy dari produk) - DITAMBAHKAN
         'kategori_id',    // ID kategori (untuk buy dari kategori)
-        'nama_item',      // Nama item (dari kategori)
-        'harga_item',     // Harga item (dari kategori)
-        'deskripsi_item', // Deskripsi item (dari kategori)
-        'item_type',      // Jenis item: 'kategori' (hanya kategori yang digunakan)
+        'nama_item',      // Nama item (dari kategori/produk)
+        'harga_item',     // Harga item (dari kategori/produk)
+        'deskripsi_item', // Deskripsi item (dari kategori/produk)
+        'item_type',      // Jenis item: 'kategori' atau 'produk'
         'jumlah',         // Jumlah item yang dibeli
     ];
 
@@ -49,8 +50,16 @@ class Keranjang extends Model
     }
 
     /**
-     * Accessor untuk mendapatkan nama item
-     * Otomatis ambil dari kategori jika nama_item kosong
+     * Relasi ke produk (untuk item_type = 'produk') - DITAMBAHKAN
+     */
+    public function produk()
+    {
+        return $this->belongsTo(Produk::class);
+    }
+
+    /**
+     * Accessor untuk mendapatkan nama item - DIPERBAIKI
+     * Otomatis ambil dari kategori/produk jika nama_item kosong
      */
     public function getNamaAttribute()
     {
@@ -62,12 +71,16 @@ class Keranjang extends Model
             return $this->kategori->nama;
         }
 
+        if ($this->produk) {
+            return $this->produk->nama;
+        }
+
         return 'Item Tidak Diketahui';
     }
 
     /**
-     * Accessor untuk mendapatkan harga item
-     * Otomatis ambil dari kategori jika harga_item kosong
+     * Accessor untuk mendapatkan harga item - DIPERBAIKI
+     * Otomatis ambil dari kategori/produk jika harga_item kosong
      */
     public function getHargaAttribute()
     {
@@ -79,12 +92,16 @@ class Keranjang extends Model
             return $this->kategori->harga;
         }
 
+        if ($this->produk) {
+            return $this->produk->harga;
+        }
+
         return 0;
     }
 
     /**
-     * Accessor untuk mendapatkan deskripsi item
-     * Otomatis ambil dari kategori jika deskripsi_item kosong
+     * Accessor untuk mendapatkan deskripsi item - DIPERBAIKI
+     * Otomatis ambil dari kategori/produk jika deskripsi_item kosong
      */
     public function getDeskripsiAttribute()
     {
@@ -94,6 +111,10 @@ class Keranjang extends Model
 
         if ($this->kategori) {
             return $this->kategori->deskripsi;
+        }
+
+        if ($this->produk) {
+            return $this->produk->deskripsi;
         }
 
         return '';
@@ -127,16 +148,29 @@ class Keranjang extends Model
     }
 
     /**
-     * Accessor untuk mendapatkan ID kategori untuk tampilan
-     * Usage: $item->item_id_kategori (untuk tampilan)
+     * Accessor untuk mendapatkan ID item untuk tampilan - DIPERBAIKI
+     * Usage: $item->item_id_display (untuk tampilan)
      */
-    public function getItemIdKategoriAttribute()
+    public function getItemIdDisplayAttribute()
     {
         if ($this->kategori) {
             return 'KAT-' . $this->kategori_id;
         }
 
+        if ($this->produk) {
+            return 'PRD-' . $this->produk_id;
+        }
+
         return 'UNKNOWN';
+    }
+
+    /**
+     * Accessor untuk nama produk yang digunakan di view - DITAMBAHKAN
+     * Untuk kompatibilitas dengan view yang menggunakan nama_produk
+     */
+    public function getNamaProdukAttribute()
+    {
+        return $this->nama; // Menggunakan accessor getNamaAttribute()
     }
 
     /**
@@ -149,6 +183,15 @@ class Keranjang extends Model
     }
 
     /**
+     * Scope untuk filter berdasarkan produk - DITAMBAHKAN
+     * Usage: Keranjang::produk()->get()
+     */
+    public function scopeProduk($query)
+    {
+        return $query->where('item_type', 'produk');
+    }
+
+    /**
      * Static method untuk membuat item keranjang dari kategori
      * Usage: Keranjang::createFromKategori($user_id, $kategori, $jumlah)
      */
@@ -157,10 +200,29 @@ class Keranjang extends Model
         return self::create([
             'user_id' => $user_id,
             'kategori_id' => $kategori->id,
+            'produk_id' => null, // NULL untuk kategori
             'nama_item' => $kategori->nama,
             'harga_item' => $kategori->harga,
             'deskripsi_item' => $kategori->deskripsi,
             'item_type' => 'kategori',
+            'jumlah' => $jumlah,
+        ]);
+    }
+
+    /**
+     * Static method untuk membuat item keranjang dari produk - DITAMBAHKAN
+     * Usage: Keranjang::createFromProduk($user_id, $produk, $jumlah)
+     */
+    public static function createFromProduk($user_id, $produk, $jumlah = 1)
+    {
+        return self::create([
+            'user_id' => $user_id,
+            'kategori_id' => null, // NULL untuk produk
+            'produk_id' => $produk->id,
+            'nama_item' => $produk->nama,
+            'harga_item' => $produk->harga,
+            'deskripsi_item' => $produk->deskripsi,
+            'item_type' => 'produk',
             'jumlah' => $jumlah,
         ]);
     }
@@ -171,5 +233,58 @@ class Keranjang extends Model
     public function isKategori()
     {
         return $this->item_type === 'kategori';
+    }
+
+    /**
+     * Method untuk cek apakah item adalah produk - DITAMBAHKAN
+     */
+    public function isProduk()
+    {
+        return $this->item_type === 'produk';
+    }
+
+    /**
+     * Method untuk mendapatkan gambar item - DITAMBAHKAN
+     * Untuk kompatibilitas dengan view yang menampilkan gambar
+     */
+    public function getGambarAttribute()
+    {
+        if ($this->kategori && $this->kategori->gambar) {
+            return $this->kategori->gambar;
+        }
+
+        if ($this->produk && $this->produk->gambar) {
+            return $this->produk->gambar;
+        }
+
+        return null;
+    }
+
+    /**
+     * Method untuk mendapatkan URL gambar lengkap - DITAMBAHKAN
+     */
+    public function getImageUrlAttribute()
+    {
+        if ($this->gambar) {
+            return asset('storage/' . $this->gambar);
+        }
+
+        return null;
+    }
+
+    /**
+     * Method untuk mendapatkan info sumber item - DITAMBAHKAN
+     */
+    public function getSumberAttribute()
+    {
+        if ($this->isKategori()) {
+            return 'Kategori Admin';
+        }
+
+        if ($this->isProduk() && $this->produk && $this->produk->toko) {
+            return 'Toko: ' . $this->produk->toko->nama;
+        }
+
+        return 'Tidak Diketahui';
     }
 }

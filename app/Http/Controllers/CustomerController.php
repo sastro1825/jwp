@@ -9,6 +9,7 @@ use App\Models\Transaksi;
 use App\Models\GuestBook;
 use App\Models\TokoRequest;
 use App\Models\ShippingOrder;
+use App\Models\TokoKategori;
 use App\Mail\LaporanMail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -19,7 +20,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class CustomerController extends Controller
 {
     /**
-     * Buy produk dari kategori - masukkan ke keranjang
+     * Buy produk dari kategori admin - masukkan ke keranjang
      */
     public function buyFromKategori($kategori_id)
     {
@@ -43,9 +44,10 @@ class CustomerController extends Controller
                 Keranjang::create([
                     'user_id' => $user_id,
                     'kategori_id' => $kategori_id,
-                    'nama_produk' => $kategori->nama,
-                    'harga' => $kategori->harga,
+                    'nama_item' => $kategori->nama,
+                    'harga_item' => $kategori->harga,
                     'jumlah' => 1,
+                    'item_type' => 'kategori'
                 ]);
                 $message = $kategori->nama . ' berhasil ditambahkan ke keranjang.';
             }
@@ -61,6 +63,49 @@ class CustomerController extends Controller
     }
 
     /**
+     * Buy produk dari kategori toko - masukkan ke keranjang
+     */
+    public function buyFromTokoKategori($kategori_id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $kategori = TokoKategori::with('toko')->findOrFail($kategori_id);
+            $user_id = Auth::id();
+
+            // Cek apakah item sudah ada di keranjang (berdasarkan nama karena ini dari toko)
+            $existingItem = Keranjang::where('user_id', $user_id)
+                ->where('nama_item', 'LIKE', '%' . $kategori->nama . '%')
+                ->first();
+
+            if ($existingItem) {
+                // Update jumlah jika sudah ada
+                $existingItem->increment('jumlah');
+                $message = 'Jumlah ' . $kategori->nama . ' di keranjang berhasil ditambah.';
+            } else {
+                // Tambah item baru ke keranjang dari kategori toko
+                Keranjang::create([
+                    'user_id' => $user_id,
+                    'kategori_id' => null, // Null karena ini bukan kategori admin
+                    'nama_item' => $kategori->nama . ' (Toko: ' . $kategori->toko->nama . ')',
+                    'harga_item' => $kategori->harga,
+                    'jumlah' => 1,
+                    'item_type' => 'kategori'
+                ]);
+                $message = $kategori->nama . ' dari ' . $kategori->toko->nama . ' berhasil ditambahkan ke keranjang.';
+            }
+
+            DB::commit();
+            return redirect()->route('customer.area')->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Error adding toko kategori to cart: ' . $e->getMessage());
+            return redirect()->route('customer.area')->with('error', 'Gagal menambahkan ke keranjang.');
+        }
+    }
+
+    /**
      * Tampilkan keranjang belanja customer
      */
     public function keranjang()
@@ -71,7 +116,7 @@ class CustomerController extends Controller
             ->get();
 
         $totalHarga = $keranjangItems->sum(function($item) {
-            return $item->jumlah * $item->harga;
+            return $item->jumlah * $item->harga_item;
         });
 
         return view('customer.keranjang', compact('keranjangItems', 'totalHarga'));
@@ -145,7 +190,7 @@ class CustomerController extends Controller
 
             // Hitung total dan pajak sesuai requirement SRS
             $subtotal = $keranjangItems->sum(function($item) {
-                return $item->jumlah * $item->harga;
+                return $item->jumlah * $item->harga_item;
             });
             
             $pajak = $subtotal * 0.10; // Pajak 10% sesuai SRS requirement
@@ -161,14 +206,14 @@ class CustomerController extends Controller
                 'catatan' => $validated['catatan'],
             ]);
 
-            // BUAT SHIPPING ORDER OTOMATIS - sesuai dengan struktur migration yang ada
+            // BUAT SHIPPING ORDER OTOMATIS
             $shippingOrder = ShippingOrder::create([
                 'transaksi_id' => $transaksi->id,
                 'tracking_number' => 'OSS-' . str_pad($transaksi->id, 6, '0', STR_PAD_LEFT) . '-' . date('Ymd'),
-                'status' => 'pending', // Status awal pending untuk admin proses
+                'status' => 'pending',
                 'courier' => $validated['metode_pembayaran'] === 'prepaid' ? 'Express Courier' : 'COD Service',
-                'shipped_date' => null, // Akan diisi admin saat mengirim
-                'delivered_date' => null, // Akan diisi admin saat sampai
+                'shipped_date' => null,
+                'delivered_date' => null,
                 'notes' => $validated['catatan'] ?: 'Pesanan dari ' . $user->name,
             ]);
 
@@ -182,9 +227,9 @@ class CustomerController extends Controller
             // Konversi keranjang items ke format untuk PDF laporan
             $items = $keranjangItems->map(function($item) {
                 return (object) [
-                    'nama' => $item->nama_produk,
+                    'nama' => $item->nama_item,
                     'jumlah' => $item->jumlah,
-                    'harga' => $item->harga,
+                    'harga' => $item->harga_item,
                     'item_type' => 'kategori',
                     'kategori_id' => $item->kategori_id,
                     'produk' => null,
@@ -404,20 +449,21 @@ class CustomerController extends Controller
     }
 
     /**
-     * Tampilkan form permohonan toko
+     * Tampilkan form permohonan toko - DIPERBAIKI
      */
     public function showTokoRequestForm()
     {
+        // Cek apakah user sudah punya permohonan pending atau approved
         $existingRequest = TokoRequest::where('user_id', auth()->id())
-            ->whereIn('status', ['pending', 'approved'])
+            ->where('status', 'pending')
             ->first();
 
-        if ($existingRequest) {
-            return redirect()->route('customer.toko.status')->with('info', 
-                'Anda sudah memiliki permohonan toko dengan status: ' . $existingRequest->status);
-        }
+        $approvedRequest = TokoRequest::where('user_id', auth()->id())
+            ->where('status', 'approved')
+            ->first();
 
-        return view('customer.toko-request-form');
+        // Pass variabel ke view
+        return view('customer.toko-request-form', compact('existingRequest', 'approvedRequest'));
     }
 
     /**
@@ -485,7 +531,7 @@ class CustomerController extends Controller
             $keranjangItems = Keranjang::where('user_id', Auth::id())->get();
             $totalItems = $keranjangItems->sum('jumlah');
             $totalHarga = $keranjangItems->sum(function($item) {
-                return $item->jumlah * $item->harga;
+                return $item->jumlah * $item->harga_item;
             });
 
             return response()->json([

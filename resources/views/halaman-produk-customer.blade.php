@@ -184,6 +184,82 @@
                         @endforeach
                     </div>
                 </div>
+                
+                {{-- Kategori dari Toko-toko (Database Terpisah) --}}
+                @if(isset($kategoriToko) && $kategoriToko->count() > 0)
+                    <div class="mb-4 mt-5">
+                        <h4>Kategori dari Toko Mitra</h4>
+                        <div class="row">
+                            @foreach($kategoriToko as $kategori)
+                            <div class="col-md-4 col-lg-3 mb-3">
+                                <div class="card h-100 kategori-card shadow-sm border-success">
+                                    {{-- Gambar Kategori Toko --}}
+                                    <div class="position-relative">
+                                        @if($kategori->gambar)
+                                            <img src="{{ asset('storage/' . $kategori->gambar) }}" 
+                                                 alt="{{ $kategori->nama }}" 
+                                                 class="card-img-top"
+                                                 style="height: 200px; object-fit: cover;">
+                                        @else
+                                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                                 style="height: 200px;">
+                                                <i class="bi bi-shop text-success" style="font-size: 3rem;"></i>
+                                            </div>
+                                        @endif
+                                        
+                                        {{-- Badge Toko --}}
+                                        <div class="position-absolute top-0 start-0 m-2">
+                                            <span class="badge bg-success">{{ $kategori->toko->nama ?? 'Toko' }}</span>
+                                        </div>
+                                        
+                                        {{-- Badge jenis kategori --}}
+                                        <div class="position-absolute top-0 end-0 m-2">
+                                            <span class="badge bg-warning">{{ $kategori->getCategoryTypeLabel() }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card-body d-flex flex-column">
+                                        {{-- Nama Kategori --}}
+                                        <h6 class="card-title text-center">{{ $kategori->nama }}</h6>
+                                        
+                                        {{-- Harga --}}
+                                        <div class="text-center mb-3">
+                                            <span class="badge bg-success fs-6">
+                                                Rp {{ number_format($kategori->harga, 0, ',', '.') }}
+                                            </span>
+                                        </div>
+                                        
+                                        {{-- Deskripsi singkat --}}
+                                        @if($kategori->deskripsi)
+                                            <p class="card-text text-muted small text-center">
+                                                {{ Str::limit($kategori->deskripsi, 50) }}
+                                            </p>
+                                        @endif
+                                        
+                                        {{-- Info Toko --}}
+                                        <small class="text-center text-muted mb-2">
+                                            Oleh: {{ $kategori->toko->nama ?? 'Toko Tidak Diketahui' }}
+                                        </small>
+                                        
+                                        {{-- Tombol View untuk kategori toko --}}
+                                        <div class="mt-auto">
+                                            <div class="d-grid gap-2">
+                                                <button class="btn btn-outline-success btn-sm" 
+                                                        onclick="viewKategoriToko({{ $kategori->id }})">
+                                                    <i class="bi bi-eye"></i> View Toko
+                                                </button>
+                                                
+                                                {{-- Note: Kategori toko tidak bisa di-buy langsung, hanya untuk display --}}
+                                                <small class="text-muted text-center">Hubungi toko untuk pembelian</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             @else
                 {{-- Tampilan jika tidak ada kategori --}}
                 <div class="text-center py-5">
@@ -656,7 +732,7 @@
 // Variable untuk menyimpan kategori yang sedang dilihat
 let currentKategoriId = null;
 
-// Fungsi untuk view detail kategori
+// Fungsi untuk view detail kategori (admin)
 function viewKategori(id) {
     currentKategoriId = id;
     
@@ -732,6 +808,68 @@ function viewKategori(id) {
             return;
         }
     @endforeach
+}
+
+// Fungsi untuk view detail kategori toko
+function viewKategoriToko(id) {
+    @if(isset($kategoriToko))
+        @foreach($kategoriToko as $kategori)
+            if (id === {{ $kategori->id }}) {
+                const modal = new bootstrap.Modal(document.getElementById('kategoriDetailModal'));
+                document.getElementById('kategoriDetailContent').innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center mb-3">
+                                @if($kategori->gambar)
+                                    <img src="{{ asset('storage/' . $kategori->gambar) }}" class="img-fluid rounded" style="max-height: 250px;">
+                                @else
+                                    <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 250px;">
+                                        <i class="bi bi-shop text-success" style="font-size: 4rem;"></i>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>{{ $kategori->nama }}</h5>
+                            <span class="badge bg-success mb-3">{{ $kategori->toko->nama ?? 'Toko' }}</span>
+                            <span class="badge bg-warning mb-3">{{ $kategori->getCategoryTypeLabel() }}</span>
+                            
+                            <div class="mb-3">
+                                <h6>Harga Kategori:</h6>
+                                <h4 class="text-success">Rp {{ number_format($kategori->harga, 0, ',', '.') }}</h4>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6>Deskripsi:</h6>
+                                <p class="text-muted">{{ $kategori->deskripsi ?: 'Tidak ada deskripsi' }}</p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <h6>Toko:</h6>
+                                <p class="text-muted">{{ $kategori->toko->nama ?? 'Toko Tidak Diketahui' }}</p>
+                                @if($kategori->toko->no_telepon)
+                                    <p class="text-muted">Kontak: {{ $kategori->toko->no_telepon }}</p>
+                                @endif
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Info:</strong> Kategori ini disediakan oleh toko mitra. Hubungi toko untuk informasi pembelian.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Disable buy button for kategori toko
+                const buyBtn = document.getElementById('buyFromModal');
+                buyBtn.disabled = true;
+                buyBtn.style.display = 'none';
+                
+                modal.show();
+                return;
+            }
+        @endforeach
+    @endif
 }
 
 // Auto-hide alerts after 5 seconds

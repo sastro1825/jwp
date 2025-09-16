@@ -9,7 +9,7 @@ use App\Http\Controllers\PemilikTokoController;
 // Route utama OSS - tampilkan halaman produk berdasarkan login status
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Route khusus untuk customer area (untuk link "Kembali ke Area Customer")
+// Route khusus untuk customer area (untuk link "Kembali ke Area Customer") - DIPERBAIKI
 Route::get('/customer-area', function() {
     if (!auth()->check()) {
         return redirect()->route('login')->with('error', 'Silakan login untuk mengakses area customer.');
@@ -20,9 +20,17 @@ Route::get('/customer-area', function() {
         return redirect()->route('admin.dashboard')->with('error', 'Admin tidak dapat mengakses area customer.');
     }
     
-    // Untuk customer dan pemilik_toko, tampilkan halaman customer
+    // Ambil kategori admin (kategori utama sistem)
     $kategoris = \App\Models\Kategori::all();
-    return view('halaman-produk-customer', compact('kategoris'));
+    
+    // Ambil kategori dari semua toko (database terpisah) - PERBAIKAN
+    $kategoriToko = \App\Models\TokoKategori::with('toko')
+        ->whereHas('toko', function($query) {
+            $query->where('status', 'approved'); // Hanya toko yang sudah approved
+        })
+        ->get();
+    
+    return view('halaman-produk-customer', compact('kategoris', 'kategoriToko'));
 })->name('customer.area');
 
 // Route untuk view detail produk via AJAX - untuk semua user (guest & customer)
@@ -83,7 +91,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/guestbook/reject/{id}', [AdminController::class, 'rejectFeedback'])->name('guestbook.reject');
     Route::delete('/guestbook/{id}', [AdminController::class, 'deleteFeedback'])->name('guestbook.delete');
     
-    // Manage Shipping Orders
+    // Manage Shipping Orders - DIPERBAIKI
     Route::get('/shipping', [AdminController::class, 'manageShippingOrders'])->name('shipping');
     Route::get('/shipping/create/{transaksi_id}', [AdminController::class, 'createShippingOrder'])->name('shipping.create');
     Route::post('/shipping/store', [AdminController::class, 'storeShippingOrder'])->name('shipping.store');
@@ -92,8 +100,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
 // Customer Routes - hanya untuk role customer
 Route::middleware(['auth', 'role:customer'])->group(function () {
-    // Buy dari kategori
+    // Buy dari kategori admin
     Route::post('/buy-from-kategori/{kategori_id}', [CustomerController::class, 'buyFromKategori'])->name('customer.buy.from.kategori');
+    
+    // Buy dari kategori toko - BARU DITAMBAHKAN
+    Route::post('/buy-from-toko-kategori/{kategori_id}', [CustomerController::class, 'buyFromTokoKategori'])->name('customer.buy.from.toko.kategori');
     
     // Keranjang management
     Route::get('/keranjang', [CustomerController::class, 'keranjang'])->name('customer.keranjang');
@@ -127,7 +138,7 @@ Route::middleware(['auth', 'role:pemilik_toko'])->prefix('pemilik-toko')->name('
         return view('pemilik-toko.dashboard');
     })->name('dashboard');
     
-    // Kelola kategori dengan controller khusus (read-only)
+    // Kelola kategori dengan controller khusus (untuk database toko_kategoris)
     Route::get('/kategori', [PemilikTokoController::class, 'manageKategori'])->name('kategori');
     Route::post('/kategori/store', [PemilikTokoController::class, 'storeKategori'])->name('kategori.store');
     Route::get('/kategori/{id}/edit', [PemilikTokoController::class, 'editKategori'])->name('kategori.edit');
@@ -138,8 +149,11 @@ Route::middleware(['auth', 'role:pemilik_toko'])->prefix('pemilik-toko')->name('
     Route::get('/shipping', [PemilikTokoController::class, 'manageShippingOrders'])->name('shipping');
     
     // Pemilik toko bisa akses semua fitur customer dengan prefix
-    // Buy dari kategori (sama seperti customer)
+    // Buy dari kategori admin (sama seperti customer)
     Route::post('/buy-from-kategori/{kategori_id}', [CustomerController::class, 'buyFromKategori'])->name('buy.from.kategori');
+    
+    // Buy dari kategori toko - BARU DITAMBAHKAN
+    Route::post('/buy-from-toko-kategori/{kategori_id}', [CustomerController::class, 'buyFromTokoKategori'])->name('buy.from.toko.kategori');
     
     // Keranjang management (sama seperti customer)
     Route::get('/keranjang', [CustomerController::class, 'keranjang'])->name('keranjang');

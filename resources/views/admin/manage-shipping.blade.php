@@ -119,7 +119,13 @@
                                 <td>
                                     <strong>{{ $shipping->tracking_number }}</strong>
                                 </td>
-                                <td>{{ $shipping->courier ?? '-' }}</td>
+                                <td>
+                                    @if($shipping->courier)
+                                        {{ $shipping->courier }}
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($shipping->status === 'pending')
                                         <span class="badge bg-warning">Pending</span>
@@ -172,7 +178,7 @@
                                                             </select>
                                                         </div>
 
-                                                        {{-- Kurir --}}
+                                                        {{-- Dropdown kurir yang benar --}}
                                                         <div class="mb-3">
                                                             <label for="courier{{ $shipping->id }}" class="form-label">Kurir</label>
                                                             <select id="courier{{ $shipping->id }}" name="courier" class="form-control">
@@ -183,6 +189,8 @@
                                                                 <option value="J&T" {{ $shipping->courier == 'J&T' ? 'selected' : '' }}>J&T Express</option>
                                                                 <option value="SiCepat" {{ $shipping->courier == 'SiCepat' ? 'selected' : '' }}>SiCepat</option>
                                                                 <option value="Anteraja" {{ $shipping->courier == 'Anteraja' ? 'selected' : '' }}>Anteraja</option>
+                                                                <option value="Express Courier" {{ $shipping->courier == 'Express Courier' ? 'selected' : '' }}>Express Courier</option>
+                                                                <option value="COD Service" {{ $shipping->courier == 'COD Service' ? 'selected' : '' }}>COD Service</option>
                                                             </select>
                                                         </div>
 

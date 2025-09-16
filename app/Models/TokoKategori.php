@@ -23,11 +23,17 @@ class TokoKategori extends Model
         'harga' => 'float',
     ];
 
+    /**
+     * Relasi ke toko
+     */
     public function toko()
     {
         return $this->belongsTo(Toko::class);
     }
 
+    /**
+     * Get label kategori yang user-friendly
+     */
     public function getCategoryTypeLabel()
     {
         $labels = [
@@ -41,11 +47,17 @@ class TokoKategori extends Model
         return $labels[$this->category_type] ?? ucwords(str_replace('-', ' ', $this->category_type));
     }
 
+    /**
+     * Get formatted harga
+     */
     public function getFormattedHargaAttribute()
     {
         return 'Rp ' . number_format($this->harga, 0, ',', '.');
     }
 
+    /**
+     * Get short description
+     */
     public function getShortDescriptionAttribute()
     {
         if ($this->deskripsi) {
