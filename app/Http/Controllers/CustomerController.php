@@ -8,12 +8,13 @@ use App\Models\Keranjang;
 use App\Models\Transaksi;
 use App\Models\GuestBook;
 use App\Models\TokoRequest;
-use App\Mail\LaporanMail; // Gunakan yang sudah ada
+use App\Models\ShippingOrder;
+use App\Mail\LaporanMail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Barryvdh\DomPDF\Facade\Pdf; // Untuk generate PDF
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CustomerController extends Controller
 {
@@ -50,15 +51,11 @@ class CustomerController extends Controller
             }
 
             DB::commit();
-
-            // PERBAIKAN: Selalu redirect ke customer.area untuk semua role
             return redirect()->route('customer.area')->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Error adding to cart: ' . $e->getMessage());
-            
-            // PERBAIKAN: Selalu redirect ke customer.area untuk semua role
             return redirect()->route('customer.area')->with('error', 'Gagal menambahkan ke keranjang.');
         }
     }
@@ -95,7 +92,6 @@ class CustomerController extends Controller
                 ->firstOrFail();
 
             $keranjangItem->update(['jumlah' => $validated['jumlah']]);
-
             return redirect()->back()->with('success', 'Jumlah item berhasil diupdate.');
 
         } catch (\Exception $e) {
@@ -114,7 +110,6 @@ class CustomerController extends Controller
                 ->firstOrFail();
 
             $keranjangItem->delete();
-
             return redirect()->back()->with('success', 'Item berhasil dihapus dari keranjang.');
 
         } catch (\Exception $e) {
@@ -123,7 +118,7 @@ class CustomerController extends Controller
     }
 
     /**
-     * Checkout - proses pemesanan dengan email notification menggunakan LaporanMail yang sudah ada
+     * Checkout - proses pemesanan dengan email notification dan buat shipping order otomatis
      */
     public function checkout(Request $request)
     {
@@ -148,12 +143,12 @@ class CustomerController extends Controller
                 return redirect()->back()->with('error', 'Keranjang kosong. Tambahkan produk terlebih dahulu.');
             }
 
-            // Hitung total dan pajak sesuai format laporan yang sudah ada
+            // Hitung total dan pajak sesuai requirement SRS
             $subtotal = $keranjangItems->sum(function($item) {
                 return $item->jumlah * $item->harga;
             });
             
-            $pajak = $subtotal * 0.10; // Pajak 10% sesuai requirement
+            $pajak = $subtotal * 0.10; // Pajak 10% sesuai SRS requirement
             $total = $subtotal + $pajak;
 
             // Buat transaksi
@@ -161,20 +156,38 @@ class CustomerController extends Controller
                 'user_id' => $user_id,
                 'total' => $total, // Total sudah termasuk pajak
                 'status' => 'pending',
-                'alamat_pengiriman' => $validated['alamat_pengiriman'],
                 'metode_pembayaran' => $validated['metode_pembayaran'],
+                'alamat_pengiriman' => $validated['alamat_pengiriman'],
                 'catatan' => $validated['catatan'],
             ]);
 
-            // Konversi keranjang items ke format yang sesuai dengan view laporan
+            // BUAT SHIPPING ORDER OTOMATIS - sesuai dengan struktur migration yang ada
+            $shippingOrder = ShippingOrder::create([
+                'transaksi_id' => $transaksi->id,
+                'tracking_number' => 'OSS-' . str_pad($transaksi->id, 6, '0', STR_PAD_LEFT) . '-' . date('Ymd'),
+                'status' => 'pending', // Status awal pending untuk admin proses
+                'courier' => $validated['metode_pembayaran'] === 'prepaid' ? 'Express Courier' : 'COD Service',
+                'shipped_date' => null, // Akan diisi admin saat mengirim
+                'delivered_date' => null, // Akan diisi admin saat sampai
+                'notes' => $validated['catatan'] ?: 'Pesanan dari ' . $user->name,
+            ]);
+
+            Log::info('Shipping order created automatically', [
+                'transaksi_id' => $transaksi->id,
+                'shipping_order_id' => $shippingOrder->id,
+                'tracking_number' => $shippingOrder->tracking_number,
+                'user_id' => $user_id
+            ]);
+
+            // Konversi keranjang items ke format untuk PDF laporan
             $items = $keranjangItems->map(function($item) {
                 return (object) [
                     'nama' => $item->nama_produk,
                     'jumlah' => $item->jumlah,
                     'harga' => $item->harga,
-                    'item_type' => 'kategori', // Karena kita pakai kategori
+                    'item_type' => 'kategori',
                     'kategori_id' => $item->kategori_id,
-                    'produk' => null, // Tidak ada produk untuk sekarang
+                    'produk' => null,
                 ];
             });
 
@@ -190,7 +203,7 @@ class CustomerController extends Controller
                     'total' => $total,
                 ]);
 
-                // Simpan PDF ke storage
+                // Simpan PDF ke storage temp
                 $fileName = 'laporan-pembelian-' . $transaksi->id . '.pdf';
                 $pdfPath = storage_path('app/temp/' . $fileName);
                 
@@ -210,10 +223,9 @@ class CustomerController extends Controller
                     'transaksi_id' => $transaksi->id,
                     'error' => $pdfError->getMessage()
                 ]);
-                // PDF path tetap null jika gagal
             }
 
-            // Kosongkan keranjang
+            // Kosongkan keranjang setelah checkout berhasil
             Keranjang::where('user_id', $user_id)->delete();
 
             // KIRIM EMAIL MENGGUNAKAN LaporanMail yang sudah ada
@@ -224,7 +236,8 @@ class CustomerController extends Controller
                     'user_id' => $user_id,
                     'transaksi_id' => $transaksi->id,
                     'email' => $user->email,
-                    'pdf_attached' => $pdfPath ? 'yes' : 'no'
+                    'pdf_attached' => $pdfPath ? 'yes' : 'no',
+                    'tracking_number' => $shippingOrder->tracking_number
                 ]);
                 
                 $emailStatus = 'Email laporan pembelian telah dikirim ke ' . $user->email;
@@ -250,13 +263,14 @@ class CustomerController extends Controller
 
             DB::commit();
 
-            // Redirect berdasarkan role dengan proper route
+            // Redirect berdasarkan role dengan pesan sukses
+            $successMessage = 'Pesanan #' . $transaksi->id . ' berhasil dibuat (Total: Rp ' . number_format($total, 0, ',', '.') . '). ' . 
+                             'Tracking: ' . $shippingOrder->tracking_number . '. ' . $emailStatus;
+
             if (auth()->user()->role === 'pemilik_toko') {
-                return redirect()->route('pemilik-toko.order.history')->with('success', 
-                    'Pesanan #' . $transaksi->id . ' berhasil dibuat (Total: Rp ' . number_format($total, 0, ',', '.') . '). ' . $emailStatus);
+                return redirect()->route('pemilik-toko.order.history')->with('success', $successMessage);
             } else {
-                return redirect()->route('customer.order.history')->with('success', 
-                    'Pesanan #' . $transaksi->id . ' berhasil dibuat (Total: Rp ' . number_format($total, 0, ',', '.') . '). ' . $emailStatus);
+                return redirect()->route('customer.order.history')->with('success', $successMessage);
             }
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -277,6 +291,7 @@ class CustomerController extends Controller
     public function orderHistory()
     {
         $transaksis = Transaksi::where('user_id', Auth::id())
+            ->with('shippingOrder') // Load shipping order untuk tracking
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -294,7 +309,13 @@ class CustomerController extends Controller
                 ->where('status', 'pending')
                 ->firstOrFail();
 
+            // Update status transaksi dan shipping order
             $transaksi->update(['status' => 'cancelled']);
+            
+            // Update shipping order jika ada
+            if ($transaksi->shippingOrder) {
+                $transaksi->shippingOrder->update(['status' => 'cancelled']);
+            }
 
             return redirect()->back()->with('success', 'Pesanan #' . $id . ' berhasil dibatalkan.');
 
@@ -315,8 +336,7 @@ class CustomerController extends Controller
 
             $user = Auth::user();
             
-            // Ambil items dari keranjang atau data transaksi
-            // Untuk demo, kita buat items dummy berdasarkan transaksi
+            // Buat items dummy berdasarkan transaksi untuk PDF
             $items = collect([
                 (object) [
                     'nama' => 'Produk dari Transaksi #' . $transaksi->id,
@@ -328,8 +348,8 @@ class CustomerController extends Controller
                 ]
             ]);
 
-            $subtotal = $transaksi->total / 1.1; // Sebelum pajak
-            $pajak = $subtotal * 0.1; // Pajak 10%
+            $subtotal = $transaksi->total / 1.1;
+            $pajak = $subtotal * 0.1;
             $total = $transaksi->total;
 
             // Generate PDF
@@ -343,7 +363,6 @@ class CustomerController extends Controller
             ]);
 
             $fileName = 'laporan-pembelian-' . $transaksi->id . '.pdf';
-            
             return $pdf->download($fileName);
 
         } catch (\Exception $e) {
@@ -366,13 +385,12 @@ class CustomerController extends Controller
                 'message.max' => 'Pesan maksimal 1000 karakter.',
             ]);
 
-            // Simpan feedback customer ke guest book dengan user_id
             GuestBook::create([
                 'name' => auth()->user()->name,
                 'email' => auth()->user()->email,
                 'message' => $validated['message'],
                 'status' => 'pending',
-                'user_id' => auth()->id(), // Link ke user
+                'user_id' => auth()->id(),
             ]);
 
             return back()->with('success', 'Terima kasih! Feedback Anda telah dikirim dan akan dimoderasi oleh admin.');
@@ -390,7 +408,6 @@ class CustomerController extends Controller
      */
     public function showTokoRequestForm()
     {
-        // Cek apakah user sudah punya permohonan yang pending atau approved
         $existingRequest = TokoRequest::where('user_id', auth()->id())
             ->whereIn('status', ['pending', 'approved'])
             ->first();
@@ -409,7 +426,6 @@ class CustomerController extends Controller
     public function submitTokoRequest(Request $request)
     {
         try {
-            // Cek apakah user sudah punya permohonan yang pending atau approved
             $existingRequest = TokoRequest::where('user_id', auth()->id())
                 ->whereIn('status', ['pending', 'approved'])
                 ->first();
@@ -437,7 +453,6 @@ class CustomerController extends Controller
             $validated['status'] = 'pending';
 
             TokoRequest::create($validated);
-
             return redirect()->route('customer.toko.status')->with('success', 
                 'Permohonan toko berhasil dikirim. Silakan tunggu review dari admin.');
 

@@ -15,17 +15,85 @@ class Transaksi extends Model
         'metode_pembayaran',
         'status',
         'pdf_path',
+        'alamat_pengiriman', // Tambahan field yang digunakan di checkout
+        'catatan', // Tambahan field yang digunakan di checkout
     ];
 
-    // Relasi ke user yang melakukan transaksi
+    protected $casts = [
+        'total' => 'float',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
+     * Relasi ke user yang melakukan transaksi
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
     
-    // Relasi ke shipping order
+    /**
+     * Relasi ke shipping order
+     */
     public function shippingOrder()
     {
         return $this->hasOne(ShippingOrder::class);
+    }
+
+    /**
+     * Scope untuk status tertentu
+     */
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    public function scopeCancelled($query)
+    {
+        return $query->where('status', 'cancelled');
+    }
+
+    /**
+     * Get status badge HTML
+     */
+    public function getStatusBadgeAttribute()
+    {
+        $badges = [
+            'pending' => '<span class="badge bg-warning">Pending</span>',
+            'completed' => '<span class="badge bg-success">Completed</span>',
+            'cancelled' => '<span class="badge bg-danger">Cancelled</span>'
+        ];
+
+        return $badges[$this->status] ?? '<span class="badge bg-secondary">Unknown</span>';
+    }
+
+    /**
+     * Get formatted total
+     */
+    public function getFormattedTotalAttribute()
+    {
+        return 'Rp ' . number_format($this->total, 0, ',', '.');
+    }
+
+    /**
+     * Check if transaction has shipping order
+     */
+    public function hasShippingOrder()
+    {
+        return $this->shippingOrder !== null;
+    }
+
+    /**
+     * Get tracking number from shipping order
+     */
+    public function getTrackingNumberAttribute()
+    {
+        return $this->shippingOrder ? $this->shippingOrder->tracking_number : null;
     }
 }
