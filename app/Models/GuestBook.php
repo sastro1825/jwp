@@ -2,25 +2,56 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class GuestBook extends Model
 {
     use HasFactory;
-    
-    protected $table = 'guest_books'; // Nama tabel untuk guest book entries
-    
+
     protected $fillable = [
         'name',
         'email', 
         'message',
-        'status'
+        'status',
+        'user_id', // Tambahan untuk customer feedback
     ];
-    
-    // Relasi ke user berdasarkan email
+
+    /**
+     * Relationship dengan User untuk customer feedback
+     */
     public function user()
     {
-        return $this->belongsTo(User::class, 'email', 'email');
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Cek apakah feedback dari visitor atau customer
+     */
+    public function isFromCustomer()
+    {
+        return !is_null($this->user_id);
+    }
+
+    /**
+     * Get nama pengirim feedback
+     */
+    public function getSenderName()
+    {
+        if ($this->isFromCustomer() && $this->user) {
+            return $this->user->name;
+        }
+        return $this->name;
+    }
+
+    /**
+     * Get email pengirim feedback
+     */
+    public function getSenderEmail()
+    {
+        if ($this->isFromCustomer() && $this->user) {
+            return $this->user->email;
+        }
+        return $this->email;
     }
 }

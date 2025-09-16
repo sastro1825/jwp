@@ -1,56 +1,81 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- Dashboard Admin OSS --}}
+{{-- Dashboard Admin OSS tanpa statistik detail --}}
 <div class="container">
     <div class="row">
         <div class="col-12">
             <h1 class="mb-4">Dashboard Admin OSS</h1>
+            <p class="text-muted">Kelola sistem online shopping untuk toko alat kesehatan</p>
         </div>
     </div>
     
     {{-- Card Statistics --}}
     <div class="row mb-4">
-        {{-- Card Total Customer --}}
         <div class="col-md-3 mb-3">
             <div class="card bg-primary text-white">
                 <div class="card-body">
-                    <h5 class="card-title">Total Customer</h5>
-                    <h2 class="card-text">{{ $jumlahCustomer }}</h2>
-                    <small>Pengguna terdaftar</small>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Total Customer</h5>
+                            <h2 class="card-text">{{ $jumlahCustomer }}</h2>
+                            <small>Pengguna customer</small>
+                        </div>
+                        <div>
+                            <i class="bi bi-people-fill" style="font-size: 3rem; opacity: 0.8;"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
-        {{-- Card Toko Pending --}}
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Pemilik Toko</h5>
+                            <h2 class="card-text">{{ $jumlahPemilikToko }}</h2>
+                            <small>Toko aktif</small>
+                        </div>
+                        <div>
+                            <i class="bi bi-shop" style="font-size: 3rem; opacity: 0.8;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="col-md-3 mb-3">
             <div class="card bg-warning text-white">
                 <div class="card-body">
-                    <h5 class="card-title">Toko Pending</h5>
-                    <h2 class="card-text">{{ $jumlahTokoPending }}</h2>
-                    <small>Menunggu persetujuan</small>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Permohonan Toko</h5>
+                            <h2 class="card-text">{{ $jumlahTokoPending }}</h2>
+                            <small>Menunggu review</small>
+                        </div>
+                        <div>
+                            <i class="bi bi-hourglass-split" style="font-size: 3rem; opacity: 0.8;"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
-        {{-- Card Feedback Pending --}}
         <div class="col-md-3 mb-3">
             <div class="card bg-info text-white">
                 <div class="card-body">
-                    <h5 class="card-title">Feedback Pending</h5>
-                    <h2 class="card-text">{{ $jumlahFeedbackPending }}</h2>
-                    <small>Menunggu moderasi</small>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Card Shipping Pending --}}
-        <div class="col-md-3 mb-3">
-            <div class="card bg-secondary text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Pengiriman Pending</h5>
-                    <h2 class="card-text">{{ $jumlahShippingPending }}</h2>
-                    <small>Belum dikirim</small>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Feedback Pending</h5>
+                            <h2 class="card-text">{{ $jumlahFeedbackPending }}</h2>
+                            <small>Menunggu moderasi</small>
+                        </div>
+                        <div>
+                            <i class="bi bi-chat-left-text-fill" style="font-size: 3rem; opacity: 0.8;"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -62,7 +87,6 @@
             <h3 class="mb-3">Menu Utama Admin</h3>
         </div>
         
-        {{-- Menu Card Manage Customers --}}
         <div class="col-md-4 mb-3">
             <div class="card">
                 <div class="card-body text-center">
@@ -74,7 +98,6 @@
             </div>
         </div>
         
-        {{-- Menu Card Manage Kategori --}}
         <div class="col-md-4 mb-3">
             <div class="card">
                 <div class="card-body text-center">
@@ -86,38 +109,50 @@
             </div>
         </div>
         
-        {{-- Menu Card Manage Toko --}}
         <div class="col-md-4 mb-3">
             <div class="card">
                 <div class="card-body text-center">
                     <i class="bi bi-shop" style="font-size: 3rem; color: #ffc107;"></i>
                     <h5 class="card-title mt-2">Permohonan Toko</h5>
-                    <p class="card-text">Approve/Reject permohonan pembukaan toko baru</p>
-                    <a href="{{ route('admin.toko.requests') }}" class="btn btn-warning">Kelola Toko</a>
+                    <p class="card-text">Approve/Reject/Delete permohonan pembukaan toko</p>
+                    <a href="{{ route('admin.toko.requests') }}" class="btn btn-warning">
+                        Kelola Permohonan
+                        @if($jumlahTokoPending > 0)
+                            <span class="badge bg-danger">{{ $jumlahTokoPending }}</span>
+                        @endif
+                    </a>
                 </div>
             </div>
         </div>
         
-        {{-- Menu Card Manage Guest Book --}}
         <div class="col-md-4 mb-3">
             <div class="card">
                 <div class="card-body text-center">
                     <i class="bi bi-chat-left-text-fill" style="font-size: 3rem; color: #17a2b8;"></i>
                     <h5 class="card-title mt-2">Guest Book</h5>
-                    <p class="card-text">View/Delete guest book entries dan moderasi feedback</p>
-                    <a href="{{ route('admin.guestbook') }}" class="btn btn-info">Kelola Feedback</a>
+                    <p class="card-text">Moderasi feedback dari visitor dan customer</p>
+                    <a href="{{ route('admin.guestbook') }}" class="btn btn-info">
+                        Kelola Feedback
+                        @if($jumlahFeedbackPending > 0)
+                            <span class="badge bg-danger">{{ $jumlahFeedbackPending }}</span>
+                        @endif
+                    </a>
                 </div>
             </div>
         </div>
         
-        {{-- Menu Card Shipping Orders --}}
         <div class="col-md-4 mb-3">
             <div class="card">
                 <div class="card-body text-center">
                     <i class="bi bi-truck" style="font-size: 3rem; color: #6c757d;"></i>
                     <h5 class="card-title mt-2">Shipping Order</h5>
                     <p class="card-text">Kelola pengiriman dan tracking pesanan customer</p>
-                    <a href="{{ route('admin.shipping') }}" class="btn btn-secondary">Kelola Pengiriman</a>
+                    <a href="{{ route('admin.shipping') }}" class="btn btn-secondary">
+                        Kelola Pengiriman
+                        @if($jumlahShippingPending > 0)
+                            <span class="badge bg-danger">{{ $jumlahShippingPending }}</span>
+                        @endif
+                    </a>
                 </div>
             </div>
         </div>

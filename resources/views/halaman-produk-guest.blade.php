@@ -10,6 +10,21 @@
         </div>
     </div>
 
+    {{-- Alert Messages untuk feedback --}}
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     {{-- Main Content dengan Layout seperti SRS --}}
     <div class="row">
         {{-- Product Display Area (Kolom Kiri) - HANYA Menampilkan Kategori Produk --}}
@@ -93,14 +108,15 @@
             @endif
         </div>
 
-        {{-- Sidebar Kategori (Kolom Kanan) sesuai SRS --}}
+        {{-- Sidebar Kategori (Kolom Kanan) dengan perbaikan scroll --}}
         <div class="col-md-3">
-            <div class="card sticky-top" style="top: 20px;">
+            {{-- Product Category Card dengan tinggi terbatas --}}
+            <div class="card product-category-card">
                 <div class="card-header">
                     <h5 class="mb-0">Product Category</h5>
                 </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
+                <div class="card-body category-list-container">
+                    <div class="list-group list-group-flush category-list">
                         {{-- Tampilkan Semua Kategori --}}
                         <div class="list-group-item list-group-item-action active">
                             <i class="bi bi-grid-3x3-gap me-2"></i>
@@ -146,8 +162,64 @@
                 </div>
             </div>
 
-            {{-- Info OSS untuk Guest --}}
+            {{-- Section Feedback untuk Visitor --}}
             <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-chat-heart"></i> Berikan Feedback
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Beri tahu kami pendapat Anda tentang OSS.</p>
+                    <form action="{{ route('guest.feedback') }}" method="POST">
+                        @csrf
+                        {{-- Nama Visitor --}}
+                        <div class="mb-2">
+                            <input type="text" 
+                                   name="name" 
+                                   class="form-control form-control-sm @error('name') is-invalid @enderror" 
+                                   placeholder="Nama Anda"
+                                   value="{{ old('name') }}"
+                                   required>
+                            @error('name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        
+                        {{-- Email Visitor --}}
+                        <div class="mb-2">
+                            <input type="email" 
+                                   name="email" 
+                                   class="form-control form-control-sm @error('email') is-invalid @enderror" 
+                                   placeholder="Email Anda"
+                                   value="{{ old('email') }}"
+                                   required>
+                            @error('email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        
+                        {{-- Pesan Feedback --}}
+                        <div class="mb-2">
+                            <textarea name="message" 
+                                      class="form-control form-control-sm @error('message') is-invalid @enderror" 
+                                      rows="3" 
+                                      placeholder="Tulis feedback Anda..."
+                                      required>{{ old('message') }}</textarea>
+                            @error('message')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-send"></i> Kirim Feedback
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {{-- Info OSS untuk Guest --}}
+            <div class="card mt-3 mb-4">
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="bi bi-info-circle"></i> Tentang OSS
@@ -186,6 +258,124 @@
     </div>
 </div>
 @endsection
+
+{{-- Custom CSS untuk perbaikan scroll dan layout --}}
+@push('styles')
+<style>
+/* Perbaikan untuk Product Category Card */
+.product-category-card {
+    max-height: 450px;
+    position: relative;
+}
+
+.category-list-container {
+    max-height: 380px;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.category-list {
+    max-height: none;
+    overflow: visible;
+}
+
+/* Custom scrollbar untuk category list */
+.category-list-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.category-list-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.category-list-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.category-list-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Firefox scrollbar */
+.category-list-container {
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+/* Ensure proper spacing untuk cards */
+.card {
+    margin-bottom: 1rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* Hover effects untuk kategori cards */
+.kategori-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .product-category-card {
+        max-height: 300px;
+    }
+    
+    .category-list-container {
+        max-height: 230px;
+    }
+}
+
+/* List group items styling */
+.list-group-item-action:hover {
+    background-color: #f8f9fa;
+}
+
+.list-group-item.active {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+/* Badge positioning */
+.float-end {
+    float: right !important;
+}
+
+/* Form controls dalam sidebar */
+.form-control-sm {
+    font-size: 0.875rem;
+}
+
+/* Button styling */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Alert improvements */
+.alert {
+    margin-bottom: 1rem;
+}
+
+/* Card header styling */
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Icon styling */
+.bi {
+    vertical-align: -0.125em;
+}
+
+/* Smooth transitions */
+.card, .btn, .list-group-item {
+    transition: all 0.2s ease-in-out;
+}
+</style>
+@endpush
 
 @push('scripts')
 <script>
@@ -238,6 +428,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (closeBtn) closeBtn.click();
         }, 5000);
     });
+
+    // Smooth scroll untuk category list
+    const categoryContainer = document.querySelector('.category-list-container');
+    if (categoryContainer) {
+        categoryContainer.style.scrollBehavior = 'smooth';
+    }
 });
 </script>
 @endpush

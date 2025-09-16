@@ -5,347 +5,470 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Kategori;
-use App\Models\Toko;
 use App\Models\GuestBook;
 use App\Models\ShippingOrder;
-use App\Models\Transaksi;
+use App\Models\TokoRequest;
+use App\Models\Toko;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
     /**
-     * Dashboard admin - menampilkan statistik utama
+     * Dashboard Admin dengan statistik
      */
     public function dashboard()
     {
-        // Hitung statistik untuk dashboard admin
+        // Hitung statistik untuk dashboard
         $jumlahCustomer = User::where('role', 'customer')->count();
-        $jumlahTokoPending = Toko::where('status', 'pending')->count();
+        $jumlahPemilikToko = User::where('role', 'pemilik_toko')->count();
+        $jumlahTokoPending = TokoRequest::where('status', 'pending')->count();
         $jumlahFeedbackPending = GuestBook::where('status', 'pending')->count();
         $jumlahShippingPending = ShippingOrder::where('status', 'pending')->count();
-        
+
         return view('admin.dashboard', compact(
-            'jumlahCustomer', 
-            'jumlahTokoPending', 
+            'jumlahCustomer',
+            'jumlahPemilikToko', 
+            'jumlahTokoPending',
             'jumlahFeedbackPending',
             'jumlahShippingPending'
         ));
     }
 
     /**
-     * Manage Customers - menampilkan daftar customer dengan opsi edit/hapus
+     * Kelola Customer - tampilkan, edit, hapus customer
      */
     public function manageCustomers()
     {
-        // Ambil semua customer dengan pagination untuk performa yang baik
-        $customers = User::where('role', 'customer')->paginate(10);
-        $jumlahCustomer = User::where('role', 'customer')->count();
+        $customers = User::where('role', 'customer')
+            ->orWhere('role', 'pemilik_toko')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
         
-        return view('admin.manage-customers', compact('customers', 'jumlahCustomer'));
+        return view('admin.manage-customers', compact('customers'));
     }
 
     /**
-     * Edit customer - form edit data customer
+     * Edit Customer
      */
     public function editCustomer($id)
     {
-        // Cari customer berdasarkan ID
-        $customer = User::where('id', $id)->where('role', 'customer')->firstOrFail();
-        
+        $customer = User::findOrFail($id);
         return view('admin.edit-customer', compact('customer'));
     }
 
     /**
-     * Update customer - proses update data customer
+     * Update Customer
      */
     public function updateCustomer(Request $request, $id)
     {
-        // Validasi input form edit customer
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $id,
-            'address' => 'nullable|string|max:500',
-            'city' => 'nullable|string|max:100',
-            'contact_no' => 'nullable|string|max:20',
-        ]);
+        try {
+            $customer = User::findOrFail($id);
+            
+            $validated = $request->validate([
+                'name' => 'required|string|max:100',
+                'email' => 'required|email|max:100|unique:users,email,' . $id,
+                'dob' => 'nullable|date',
+                'gender' => 'nullable|in:male,female',
+                'address' => 'nullable|string|max:500',
+                'city' => 'nullable|string|max:100',
+                'contact_no' => 'nullable|string|max:20',
+                'paypal_id' => 'nullable|string|max:100',
+                'role' => 'required|in:customer,pemilik_toko',
+            ]);
 
-        // Cari dan update data customer
-        $customer = User::where('id', $id)->where('role', 'customer')->firstOrFail();
-        $customer->update($request->only(['name', 'email', 'address', 'city', 'contact_no']));
+            $customer->update($validated);
 
-        return redirect()->route('admin.customers')->with('success', 'Data customer berhasil diperbarui.');
+            return redirect()->route('admin.customers')->with('success', 'Data customer berhasil diupdate.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengupdate customer: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Delete customer - hapus customer dan semua data terkait
+     * Delete Customer
      */
     public function deleteCustomer($id)
     {
-        // Cari customer yang akan dihapus
-        $customer = User::where('id', $id)->where('role', 'customer')->firstOrFail();
-        
-        // Hapus customer beserta data terkait (Laravel akan handle cascade)
-        $customer->delete();
+        try {
+            $customer = User::findOrFail($id);
+            
+            // Cek apakah customer memiliki toko
+            if ($customer->toko) {
+                $customer->toko->delete();
+            }
+            
+            // Hapus permohonan toko jika ada
+            TokoRequest::where('user_id', $id)->delete();
+            
+            $customer->delete();
 
-        return redirect()->route('admin.customers')->with('success', 'Customer berhasil dihapus.');
+            return redirect()->route('admin.customers')->with('success', 'Customer berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus customer: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Manage Kategori - menampilkan form dan daftar kategori
+     * Kelola Kategori - CRUD kategori produk
      */
     public function manageKategori()
     {
-        // Ambil semua kategori untuk ditampilkan dengan pagination
-        $kategoris = Kategori::paginate(10);
-        
+        $kategoris = Kategori::orderBy('created_at', 'desc')->paginate(15);
         return view('admin.manage-kategori', compact('kategoris'));
     }
 
     /**
-     * Store Kategori - simpan kategori baru dengan category type
+     * Store Kategori Baru
      */
     public function storeKategori(Request $request)
     {
-        // Validasi input form kategori baru dengan category_type
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string|max:1000',
-            'harga' => 'required|numeric|min:0', // Harga kategori wajib diisi
-            'category_type' => 'required|in:obat-obatan,alat-kesehatan,suplemen-kesehatan,kesehatan-pribadi,perawatan-kecantikan,gizi-nutrisi,kesehatan-lingkungan', // Validasi category type
-            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi gambar
-        ]);
+        try {
+            $validated = $request->validate([
+                'nama' => 'required|string|max:100|unique:kategoris,nama',
+                'deskripsi' => 'nullable|string|max:500',
+                'harga' => 'required|numeric|min:0',
+                'category_type' => 'required|string|in:alat-kesehatan,obat-obatan,suplemen-kesehatan,perawatan-kecantikan,kesehatan-pribadi',
+                'gambar' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+            ]);
 
-        // Siapkan data untuk disimpan
-        $data = $request->only(['nama', 'deskripsi', 'harga', 'category_type']);
+            // Handle upload gambar
+            if ($request->hasFile('gambar')) {
+                $path = $request->file('gambar')->store('kategoris', 'public');
+                $validated['gambar'] = $path;
+            }
 
-        // Handle upload gambar jika ada
-        if ($request->hasFile('gambar')) {
-            $gambarPath = $request->file('gambar')->store('kategori', 'public');
-            $data['gambar'] = $gambarPath;
+            Kategori::create($validated);
+
+            return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menambahkan kategori: ' . $e->getMessage());
         }
-
-        // Simpan kategori baru
-        Kategori::create($data);
-
-        return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil ditambahkan.');
     }
 
     /**
-     * Edit Kategori - form edit kategori
+     * Edit Kategori
      */
     public function editKategori($id)
     {
-        // Cari kategori berdasarkan ID
         $kategori = Kategori::findOrFail($id);
-        
         return view('admin.edit-kategori', compact('kategori'));
     }
 
     /**
-     * Update Kategori - proses update kategori dengan category type
+     * Update Kategori
      */
     public function updateKategori(Request $request, $id)
     {
-        // Validasi input form edit kategori dengan category_type
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string|max:1000',
-            'harga' => 'required|numeric|min:0', // Harga kategori wajib diisi
-            'category_type' => 'required|in:obat-obatan,alat-kesehatan,suplemen-kesehatan,kesehatan-pribadi,perawatan-kecantikan,gizi-nutrisi,kesehatan-lingkungan', // Validasi category type
-            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        // Cari kategori yang akan diupdate
-        $kategori = Kategori::findOrFail($id);
-        
-        // Siapkan data untuk update
-        $data = $request->only(['nama', 'deskripsi', 'harga', 'category_type']);
-
-        // Handle upload gambar baru jika ada
-        if ($request->hasFile('gambar')) {
-            // Hapus gambar lama jika ada
-            if ($kategori->gambar && Storage::disk('public')->exists($kategori->gambar)) {
-                Storage::disk('public')->delete($kategori->gambar);
-            }
+        try {
+            $kategori = Kategori::findOrFail($id);
             
-            // Upload gambar baru
-            $gambarPath = $request->file('gambar')->store('kategori', 'public');
-            $data['gambar'] = $gambarPath;
+            $validated = $request->validate([
+                'nama' => 'required|string|max:100|unique:kategoris,nama,' . $id,
+                'deskripsi' => 'nullable|string|max:500',
+                'harga' => 'required|numeric|min:0',
+                'category_type' => 'required|string|in:alat-kesehatan,obat-obatan,suplemen-kesehatan,perawatan-kecantikan,kesehatan-pribadi',
+                'gambar' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+            ]);
+
+            // Handle upload gambar baru
+            if ($request->hasFile('gambar')) {
+                // Hapus gambar lama jika ada
+                if ($kategori->gambar) {
+                    Storage::disk('public')->delete($kategori->gambar);
+                }
+                $path = $request->file('gambar')->store('kategoris', 'public');
+                $validated['gambar'] = $path;
+            }
+
+            $kategori->update($validated);
+
+            return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil diupdate.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengupdate kategori: ' . $e->getMessage());
         }
-
-        // Update kategori
-        $kategori->update($data);
-
-        return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil diperbarui.');
     }
 
     /**
-     * Delete Kategori - hapus kategori
+     * Delete Kategori
      */
     public function deleteKategori($id)
     {
-        // Cari kategori yang akan dihapus
-        $kategori = Kategori::findOrFail($id);
-        
-        // Hapus gambar jika ada
-        if ($kategori->gambar && Storage::disk('public')->exists($kategori->gambar)) {
-            Storage::disk('public')->delete($kategori->gambar);
-        }
-        
-        // Hapus kategori
-        $kategori->delete();
+        try {
+            $kategori = Kategori::findOrFail($id);
+            
+            // Hapus gambar jika ada
+            if ($kategori->gambar) {
+                Storage::disk('public')->delete($kategori->gambar);
+            }
+            
+            $kategori->delete();
 
-        return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil dihapus.');
+            return redirect()->route('admin.kategori')->with('success', 'Kategori berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus kategori: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Manage Toko Requests - menampilkan permohonan toko pending
+     * Kelola Permohonan Toko - tampilkan semua dengan aksi delete
      */
     public function manageTokoRequests()
     {
-        // Ambil semua toko dengan status pending
-        $tokos = Toko::where('status', 'pending')->with('user')->get();
+        // Ambil semua permohonan toko dengan pagination
+        $tokoRequests = TokoRequest::with('user')->orderBy('created_at', 'desc')->paginate(15);
         
-        return view('admin.manage-toko', compact('tokos'));
+        // Statistik
+        $totalPending = TokoRequest::where('status', 'pending')->count();
+        $totalApproved = TokoRequest::where('status', 'approved')->count();
+        $totalRejected = TokoRequest::where('status', 'rejected')->count();
+        
+        return view('admin.manage-toko-requests', compact(
+            'tokoRequests', 
+            'totalPending', 
+            'totalApproved', 
+            'totalRejected'
+        ));
     }
 
     /**
-     * Approve Toko - setujui permohonan toko
+     * View Detail Permohonan Toko
      */
-    public function approveToko($id)
+    public function viewTokoRequestDetail($id)
     {
-        // Cari toko yang akan disetujui
-        $toko = Toko::findOrFail($id);
-        $toko->update(['status' => 'approved']);
-
-        return redirect()->route('admin.toko.requests')->with('success', 'Toko berhasil disetujui.');
+        $tokoRequest = TokoRequest::with('user')->findOrFail($id);
+        return view('admin.toko-request-detail', compact('tokoRequest'));
     }
 
     /**
-     * Reject Toko - tolak permohonan toko
+     * Approve Permohonan Toko
      */
-    public function rejectToko($id)
+    public function approveTokoRequest(Request $request, $id)
     {
-        // Cari toko yang akan ditolak
-        $toko = Toko::findOrFail($id);
-        $toko->update(['status' => 'rejected']);
+        try {
+            $tokoRequest = TokoRequest::with('user')->findOrFail($id);
+            
+            // Validasi catatan admin
+            $validated = $request->validate([
+                'catatan_admin' => 'nullable|string|max:1000',
+            ]);
 
-        return redirect()->route('admin.toko.requests')->with('success', 'Toko berhasil ditolak.');
+            // Update status permohonan
+            $tokoRequest->update([
+                'status' => 'approved',
+                'catatan_admin' => $validated['catatan_admin'] ?? 'Permohonan toko Anda telah disetujui.',
+            ]);
+
+            // Update role user menjadi pemilik_toko
+            $tokoRequest->user->update(['role' => 'pemilik_toko']);
+
+            // Buat data toko baru
+            Toko::create([
+                'nama' => $tokoRequest->nama_toko,
+                'user_id' => $tokoRequest->user_id,
+                'status' => 'approved',
+                'alamat' => $tokoRequest->alamat_toko,
+                'deskripsi' => $tokoRequest->deskripsi_toko,
+                'kategori_usaha' => $tokoRequest->kategori_usaha,
+                'no_telepon' => $tokoRequest->no_telepon,
+            ]);
+
+            return redirect()->route('admin.toko.requests')->with('success', 
+                'Permohonan toko dari ' . $tokoRequest->user->name . ' telah disetujui.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menyetujui permohonan: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Manage Guest Book - tampilkan daftar feedback
+     * Reject Permohonan Toko
+     */
+    public function rejectTokoRequest(Request $request, $id)
+    {
+        try {
+            $tokoRequest = TokoRequest::with('user')->findOrFail($id);
+            
+            // Validasi catatan admin (wajib untuk rejection)
+            $validated = $request->validate([
+                'catatan_admin' => 'required|string|max:1000',
+            ], [
+                'catatan_admin.required' => 'Alasan penolakan wajib diisi.',
+            ]);
+
+            // Update status permohonan
+            $tokoRequest->update([
+                'status' => 'rejected',
+                'catatan_admin' => $validated['catatan_admin'],
+            ]);
+
+            return redirect()->route('admin.toko.requests')->with('success', 
+                'Permohonan toko dari ' . $tokoRequest->user->name . ' telah ditolak.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menolak permohonan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete Permohonan Toko
+     */
+    public function deleteTokoRequest($id)
+    {
+        try {
+            $tokoRequest = TokoRequest::with('user')->findOrFail($id);
+            
+            // Jika toko sudah approved, ubah role user kembali ke customer
+            if ($tokoRequest->status === 'approved' && $tokoRequest->user) {
+                $tokoRequest->user->update(['role' => 'customer']);
+                
+                // Hapus toko jika ada
+                if ($tokoRequest->user->toko) {
+                    $tokoRequest->user->toko->delete();
+                }
+            }
+            
+            $tokoRequest->delete();
+            
+            return redirect()->route('admin.toko.requests')->with('success', 'Permohonan toko berhasil dihapus.');
+            
+        } catch (\Exception $e) {
+            return redirect()->route('admin.toko.requests')->with('error', 'Gagal menghapus permohonan toko.');
+        }
+    }
+
+    /**
+     * Kelola Guest Book - tampilkan feedback dari visitor DAN customer
      */
     public function manageGuestBook()
     {
-        // Ambil semua feedback dengan pagination
-        $feedbacks = GuestBook::orderBy('created_at', 'desc')->paginate(10);
+        // Ambil semua feedback (visitor dan customer)
+        $allFeedbacks = GuestBook::with('user')->orderBy('created_at', 'desc')->paginate(15);
         
-        return view('admin.manage-guestbook', compact('feedbacks'));
+        // Statistik
+        $totalFeedback = GuestBook::count();
+        $totalPending = GuestBook::where('status', 'pending')->count();
+        $totalApproved = GuestBook::where('status', 'approved')->count();
+        $totalRejected = GuestBook::where('status', 'rejected')->count();
+        
+        return view('admin.manage-guest-book', compact(
+            'allFeedbacks',
+            'totalFeedback', 
+            'totalPending', 
+            'totalApproved', 
+            'totalRejected'
+        ));
     }
 
     /**
-     * Approve Feedback - setujui feedback untuk ditampilkan
+     * Approve Feedback
      */
     public function approveFeedback($id)
     {
-        // Cari feedback yang akan disetujui
-        $feedback = GuestBook::findOrFail($id);
-        $feedback->update(['status' => 'approved']);
+        try {
+            $feedback = GuestBook::findOrFail($id);
+            $feedback->update(['status' => 'approved']);
 
-        return redirect()->route('admin.guestbook')->with('success', 'Feedback berhasil disetujui.');
+            return redirect()->route('admin.guestbook')->with('success', 'Feedback berhasil diapprove.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal approve feedback.');
+        }
     }
 
     /**
-     * Reject Feedback - tolak feedback
+     * Reject Feedback
      */
     public function rejectFeedback($id)
     {
-        // Cari feedback yang akan ditolak
-        $feedback = GuestBook::findOrFail($id);
-        $feedback->update(['status' => 'rejected']);
+        try {
+            $feedback = GuestBook::findOrFail($id);
+            $feedback->update(['status' => 'rejected']);
 
-        return redirect()->route('admin.guestbook')->with('success', 'Feedback berhasil ditolak.');
+            return redirect()->route('admin.guestbook')->with('success', 'Feedback berhasil direject.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal reject feedback.');
+        }
     }
 
     /**
-     * Delete Feedback - hapus feedback
+     * Delete Feedback
      */
     public function deleteFeedback($id)
     {
-        // Cari dan hapus feedback
-        $feedback = GuestBook::findOrFail($id);
-        $feedback->delete();
+        try {
+            $feedback = GuestBook::findOrFail($id);
+            $feedback->delete();
 
-        return redirect()->route('admin.guestbook')->with('success', 'Feedback berhasil dihapus.');
+            return redirect()->route('admin.guestbook')->with('success', 'Feedback berhasil dihapus.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menghapus feedback.');
+        }
     }
 
     /**
-     * Manage Shipping Orders - kelola pengiriman
+     * Kelola Shipping Orders
      */
     public function manageShippingOrders()
     {
-        // Ambil semua shipping orders dengan pagination
         $shippingOrders = ShippingOrder::with(['transaksi.user'])
-                                     ->orderBy('created_at', 'desc')
-                                     ->paginate(10);
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
         
         return view('admin.manage-shipping', compact('shippingOrders'));
     }
 
     /**
-     * Create Shipping Order - buat order pengiriman untuk transaksi
+     * Create Shipping Order
      */
     public function createShippingOrder($transaksi_id)
     {
-        // Cari transaksi yang akan dibuatkan shipping order
-        $transaksi = Transaksi::with('user')->findOrFail($transaksi_id);
-        
+        $transaksi = \App\Models\Transaksi::with('user')->findOrFail($transaksi_id);
         return view('admin.create-shipping', compact('transaksi'));
     }
 
     /**
-     * Store Shipping Order - simpan data pengiriman
+     * Store Shipping Order
      */
     public function storeShippingOrder(Request $request)
     {
-        // Validasi input form shipping order
-        $request->validate([
-            'transaksi_id' => 'required|exists:transaksis,id',
-            'tracking_number' => 'required|string|unique:shipping_orders,tracking_number',
-            'courier' => 'required|string',
-            'notes' => 'nullable|string',
-        ]);
+        try {
+            $validated = $request->validate([
+                'transaksi_id' => 'required|exists:transaksis,id',
+                'shipping_address' => 'required|string|max:500',
+                'estimated_delivery' => 'required|date|after:today',
+                'notes' => 'nullable|string|max:1000',
+            ]);
 
-        // Buat shipping order baru
-        ShippingOrder::create([
-            'transaksi_id' => $request->transaksi_id,
-            'tracking_number' => $request->tracking_number,
-            'courier' => $request->courier,
-            'status' => 'pending',
-            'notes' => $request->notes,
-        ]);
+            $validated['status'] = 'pending';
+            $validated['tracking_number'] = 'OSS-' . strtoupper(uniqid());
 
-        return redirect()->route('admin.shipping')->with('success', 'Order pengiriman berhasil dibuat.');
+            ShippingOrder::create($validated);
+
+            return redirect()->route('admin.shipping')->with('success', 'Shipping order berhasil dibuat.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal membuat shipping order: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Update Shipping Status - update status pengiriman
+     * Update Shipping Status
      */
     public function updateShippingStatus(Request $request, $id)
     {
-        // Validasi input status
-        $request->validate([
-            'status' => 'required|in:pending,shipped,delivered,cancelled',
-            'shipped_date' => 'nullable|date',
-            'delivered_date' => 'nullable|date',
-            'notes' => 'nullable|string',
-        ]);
+        try {
+            $shipping = ShippingOrder::findOrFail($id);
+            
+            $validated = $request->validate([
+                'status' => 'required|in:pending,shipped,delivered,cancelled',
+                'notes' => 'nullable|string|max:1000',
+            ]);
 
-        // Update status shipping order
-        $shippingOrder = ShippingOrder::findOrFail($id);
-        $shippingOrder->update($request->only(['status', 'shipped_date', 'delivered_date', 'notes']));
+            $shipping->update($validated);
 
-        return redirect()->route('admin.shipping')->with('success', 'Status pengiriman berhasil diupdate.');
+            return redirect()->route('admin.shipping')->with('success', 'Status pengiriman berhasil diupdate.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengupdate status pengiriman.');
+        }
     }
 }

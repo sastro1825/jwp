@@ -12,29 +12,42 @@ use Illuminate\View\View;
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Display the user's profile form - DIPERBAIKI: Tampilkan info lengkap user
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+        
+        // Ambil riwayat transaksi user untuk ditampilkan di profile
+        $transaksis = \App\Models\Transaksi::where('user_id', $user->id)
+                                          ->with(['shippingOrder'])
+                                          ->orderBy('created_at', 'desc')
+                                          ->paginate(5); // Pagination 5 item per halaman
+        
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'transaksis' => $transaksis // Pass data transaksi ke view
         ]);
     }
 
     /**
-     * Update the user's profile information.
+     * Update the user's profile information - DIPERBAIKI: Update semua field profile
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        
+        // Update data user dengan semua field yang di-validate
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // Reset email verification jika email berubah
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return Redirect::route('profile.edit')->with('success', 'Profile berhasil diperbarui!');
     }
 
     /**

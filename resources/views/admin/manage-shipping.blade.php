@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- Halaman Kelola Shipping Orders --}}
+{{-- Halaman Kelola Shipping Orders - DIPERBAIKI --}}
 <div class="container">
     <div class="row">
         <div class="col-12">
@@ -21,6 +21,18 @@
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Terjadi kesalahan:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -69,11 +81,11 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
-                <i class="bi bi-truck"></i> Daftar Pengiriman
+                <i class="bi bi-truck"></i> Daftar Pengiriman ({{ $shippingOrders->total() }} total)
             </h5>
-            <a href="#" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createShippingModal">
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createShippingModal">
                 <i class="bi bi-plus-circle"></i> Buat Shipping Order
-            </a>
+            </button>
         </div>
         <div class="card-body">
             @if($shippingOrders->count() > 0)
@@ -101,7 +113,8 @@
                                 </td>
                                 <td>
                                     <span class="badge bg-secondary">ID: {{ $shipping->transaksi->id }}</span><br>
-                                    <small>Rp {{ number_format($shipping->transaksi->total, 0, ',', '.') }}</small>
+                                    <small>Rp {{ number_format($shipping->transaksi->total, 0, ',', '.') }}</small><br>
+                                    <small class="text-muted">{{ $shipping->transaksi->created_at->format('d/m/Y') }}</small>
                                 </td>
                                 <td>
                                     <strong>{{ $shipping->tracking_number }}</strong>
@@ -136,7 +149,7 @@
                                         <i class="bi bi-eye"></i>
                                     </button>
 
-                                    {{-- Modal Update Status --}}
+                                    {{-- Modal Update Status - DIPERBAIKI --}}
                                     <div class="modal fade" id="updateModal{{ $shipping->id }}" tabindex="-1">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
@@ -156,6 +169,20 @@
                                                                 <option value="shipped" {{ $shipping->status == 'shipped' ? 'selected' : '' }}>Shipped</option>
                                                                 <option value="delivered" {{ $shipping->status == 'delivered' ? 'selected' : '' }}>Delivered</option>
                                                                 <option value="cancelled" {{ $shipping->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                                            </select>
+                                                        </div>
+
+                                                        {{-- Kurir --}}
+                                                        <div class="mb-3">
+                                                            <label for="courier{{ $shipping->id }}" class="form-label">Kurir</label>
+                                                            <select id="courier{{ $shipping->id }}" name="courier" class="form-control">
+                                                                <option value="">Pilih Kurir...</option>
+                                                                <option value="JNE" {{ $shipping->courier == 'JNE' ? 'selected' : '' }}>JNE</option>
+                                                                <option value="TIKI" {{ $shipping->courier == 'TIKI' ? 'selected' : '' }}>TIKI</option>
+                                                                <option value="POS" {{ $shipping->courier == 'POS' ? 'selected' : '' }}>POS Indonesia</option>
+                                                                <option value="J&T" {{ $shipping->courier == 'J&T' ? 'selected' : '' }}>J&T Express</option>
+                                                                <option value="SiCepat" {{ $shipping->courier == 'SiCepat' ? 'selected' : '' }}>SiCepat</option>
+                                                                <option value="Anteraja" {{ $shipping->courier == 'Anteraja' ? 'selected' : '' }}>Anteraja</option>
                                                             </select>
                                                         </div>
 
@@ -190,7 +217,9 @@
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                        <button type="submit" class="btn btn-primary">Update Status</button>
+                                                        <button type="submit" class="btn btn-primary" onclick="this.disabled=true; this.innerHTML='<i class=\'bi bi-hourglass-split\'></i> Updating...'; this.form.submit();">
+                                                            Update Status
+                                                        </button>
                                                     </div>
                                                 </form>
                                             </div>
@@ -369,3 +398,41 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide alerts after 5 seconds
+    const alerts = document.querySelectorAll('.alert-dismissible');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            const closeBtn = alert.querySelector('.btn-close');
+            if (closeBtn) closeBtn.click();
+        }, 5000);
+    });
+
+    // Auto-set today's date for shipped status
+    const statusSelects = document.querySelectorAll('select[name="status"]');
+    statusSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            const shippingId = this.id.replace('status', '');
+            const shippedDateInput = document.getElementById('shipped_date' + shippingId);
+            const deliveredDateInput = document.getElementById('delivered_date' + shippingId);
+            
+            if (this.value === 'shipped' && !shippedDateInput.value) {
+                shippedDateInput.value = new Date().toISOString().split('T')[0];
+            }
+            
+            if (this.value === 'delivered') {
+                if (!shippedDateInput.value) {
+                    shippedDateInput.value = new Date(Date.now() - 86400000).toISOString().split('T')[0]; // Yesterday
+                }
+                if (!deliveredDateInput.value) {
+                    deliveredDateInput.value = new Date().toISOString().split('T')[0]; // Today
+                }
+            }
+        });
+    });
+});
+</script>
+@endpush
