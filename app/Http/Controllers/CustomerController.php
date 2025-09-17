@@ -63,19 +63,21 @@ class CustomerController extends Controller
     }
 
     /**
-     * Buy produk dari kategori toko - masukkan ke keranjang
+     * Buy produk dari kategori toko mitra - FUNGSI BARU
      */
     public function buyFromTokoKategori($kategori_id)
     {
         try {
             DB::beginTransaction();
 
+            // Ambil kategori toko dengan relasi toko
             $kategori = TokoKategori::with('toko')->findOrFail($kategori_id);
             $user_id = Auth::id();
 
-            // Cek apakah item sudah ada di keranjang (berdasarkan nama karena ini dari toko)
+            // Cek apakah item sudah ada di keranjang
             $existingItem = Keranjang::where('user_id', $user_id)
                 ->where('nama_item', 'LIKE', '%' . $kategori->nama . '%')
+                ->where('item_type', 'toko_kategori')
                 ->first();
 
             if ($existingItem) {
@@ -90,7 +92,7 @@ class CustomerController extends Controller
                     'nama_item' => $kategori->nama . ' (Toko: ' . $kategori->toko->nama . ')',
                     'harga_item' => $kategori->harga,
                     'jumlah' => 1,
-                    'item_type' => 'kategori'
+                    'item_type' => 'toko_kategori'
                 ]);
                 $message = $kategori->nama . ' dari ' . $kategori->toko->nama . ' berhasil ditambahkan ke keranjang.';
             }
@@ -163,7 +165,7 @@ class CustomerController extends Controller
     }
 
     /**
-     * Checkout - proses pemesanan dengan email notification dan buat shipping order otomatis
+     * Checkout - DIPERBAIKI untuk handle item toko kategori dengan benar
      */
     public function checkout(Request $request)
     {
@@ -188,25 +190,38 @@ class CustomerController extends Controller
                 return redirect()->back()->with('error', 'Keranjang kosong. Tambahkan produk terlebih dahulu.');
             }
 
-            // Hitung total dan pajak sesuai requirement SRS
+            // Hitung total dari keranjang yang sebenarnya
             $subtotal = $keranjangItems->sum(function($item) {
                 return $item->jumlah * $item->harga_item;
             });
             
-            $pajak = $subtotal * 0.10; // Pajak 10% sesuai SRS requirement
+            $pajak = $subtotal * 0.10; // Pajak 10% sesuai SRS
             $total = $subtotal + $pajak;
 
             // Buat transaksi
             $transaksi = Transaksi::create([
                 'user_id' => $user_id,
-                'total' => $total, // Total sudah termasuk pajak
+                'total' => $total,
                 'status' => 'pending',
                 'metode_pembayaran' => $validated['metode_pembayaran'],
                 'alamat_pengiriman' => $validated['alamat_pengiriman'],
                 'catatan' => $validated['catatan'],
             ]);
 
-            // BUAT SHIPPING ORDER OTOMATIS
+            // Simpan detail transaksi dari keranjang yang sebenarnya
+            foreach ($keranjangItems as $item) {
+                \App\Models\DetailTransaksi::create([
+                    'transaksi_id' => $transaksi->id,
+                    'nama_item' => $item->nama_item,
+                    'harga_item' => $item->harga_item,
+                    'jumlah' => $item->jumlah,
+                    'subtotal_item' => $item->jumlah * $item->harga_item,
+                    'item_type' => $item->item_type, // kategori, produk, atau toko_kategori
+                    'deskripsi_item' => $item->deskripsi_item
+                ]);
+            }
+
+            // Buat shipping order otomatis
             $shippingOrder = ShippingOrder::create([
                 'transaksi_id' => $transaksi->id,
                 'tracking_number' => 'OSS-' . str_pad($transaksi->id, 6, '0', STR_PAD_LEFT) . '-' . date('Ymd'),
@@ -224,19 +239,9 @@ class CustomerController extends Controller
                 'user_id' => $user_id
             ]);
 
-            // Konversi keranjang items ke format untuk PDF laporan
-            $items = $keranjangItems->map(function($item) {
-                return (object) [
-                    'nama' => $item->nama_item,
-                    'jumlah' => $item->jumlah,
-                    'harga' => $item->harga_item,
-                    'item_type' => 'kategori',
-                    'kategori_id' => $item->kategori_id,
-                    'produk' => null,
-                ];
-            });
+            // Generate PDF dengan item yang benar dari detail transaksi
+            $items = \App\Models\DetailTransaksi::where('transaksi_id', $transaksi->id)->get();
 
-            // Generate PDF menggunakan view yang sudah ada
             $pdfPath = null;
             try {
                 $pdf = Pdf::loadView('laporan-pembelian', [
@@ -273,7 +278,7 @@ class CustomerController extends Controller
             // Kosongkan keranjang setelah checkout berhasil
             Keranjang::where('user_id', $user_id)->delete();
 
-            // KIRIM EMAIL MENGGUNAKAN LaporanMail yang sudah ada
+            // Kirim email menggunakan LaporanMail
             try {
                 Mail::to($user->email)->send(new LaporanMail($pdfPath, $transaksi));
                 
@@ -308,7 +313,6 @@ class CustomerController extends Controller
 
             DB::commit();
 
-            // Redirect berdasarkan role dengan pesan sukses
             $successMessage = 'Pesanan #' . $transaksi->id . ' berhasil dibuat (Total: Rp ' . number_format($total, 0, ',', '.') . '). ' . 
                              'Tracking: ' . $shippingOrder->tracking_number . '. ' . $emailStatus;
 

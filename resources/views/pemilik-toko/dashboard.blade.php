@@ -152,144 +152,6 @@
         </div>
     </div>
 
-    {{-- Quick Actions --}}
-    <div class="row mt-4">
-        <div class="col-12">
-            <h3 class="mb-3">Quick Actions</h3>
-        </div>
-        
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-2 text-center mb-2">
-                            <a href="{{ route('customer.area') }}" class="btn btn-outline-primary btn-sm w-100">
-                                <i class="bi bi-shop"></i><br>Customer Area
-                            </a>
-                        </div>
-                        <div class="col-md-2 text-center mb-2">
-                            <a href="{{ route('pemilik-toko.keranjang') }}" class="btn btn-outline-success btn-sm w-100">
-                                <i class="bi bi-cart3"></i><br>Keranjang
-                                @php
-                                    $jumlahKeranjang = \App\Models\Keranjang::where('user_id', auth()->id())->sum('jumlah');
-                                @endphp
-                                @if($jumlahKeranjang > 0)
-                                    <span class="badge bg-danger">{{ $jumlahKeranjang }}</span>
-                                @endif
-                            </a>
-                        </div>
-                        <div class="col-md-2 text-center mb-2">
-                            <a href="{{ route('pemilik-toko.order.history') }}" class="btn btn-outline-info btn-sm w-100">
-                                <i class="bi bi-clock-history"></i><br>Riwayat Order
-                            </a>
-                        </div>
-                        <div class="col-md-2 text-center mb-2">
-                            <a href="{{ route('pemilik-toko.kategori') }}" class="btn btn-outline-warning btn-sm w-100">
-                                <i class="bi bi-tags"></i><br>Kategori
-                            </a>
-                        </div>
-                        <div class="col-md-2 text-center mb-2">
-                            <a href="{{ route('pemilik-toko.shipping') }}" class="btn btn-outline-secondary btn-sm w-100">
-                                <i class="bi bi-truck"></i><br>Pengiriman
-                            </a>
-                        </div>
-                        <div class="col-md-2 text-center mb-2">
-                            <button class="btn btn-outline-dark btn-sm w-100" data-bs-toggle="modal" data-bs-target="#profileModal">
-                                <i class="bi bi-person"></i><br>Profile
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Ringkasan Aktivitas --}}
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="bi bi-activity"></i> Aktivitas Terbaru
-                    </h6>
-                </div>
-                <div class="card-body">
-                    @php
-                        $recentTransaksi = \App\Models\Transaksi::where('user_id', auth()->id())
-                            ->orderBy('created_at', 'desc')
-                            ->limit(5)
-                            ->get();
-                    @endphp
-                    
-                    @if($recentTransaksi->count() > 0)
-                        <div class="list-group list-group-flush">
-                            @foreach($recentTransaksi as $transaksi)
-                                <div class="list-group-item">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">Pesanan #{{ $transaksi->id }}</h6>
-                                        <small>{{ $transaksi->created_at->diffForHumans() }}</small>
-                                    </div>
-                                    <p class="mb-1">Total: Rp {{ number_format($transaksi->total, 0, ',', '.') }}</p>
-                                    <small class="text-muted">Status: 
-                                        <span class="badge bg-{{ $transaksi->status === 'pending' ? 'warning' : ($transaksi->status === 'completed' ? 'success' : 'danger') }}">
-                                            {{ ucfirst($transaksi->status) }}
-                                        </span>
-                                    </small>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center text-muted">
-                            <i class="bi bi-receipt" style="font-size: 2rem;"></i>
-                            <p class="mt-2">Belum ada transaksi</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="bi bi-pie-chart"></i> Statistik Personal
-                    </h6>
-                </div>
-                <div class="card-body">
-                    @php
-                        $totalTransaksi = \App\Models\Transaksi::where('user_id', auth()->id())->count();
-                        $totalBelanja = \App\Models\Transaksi::where('user_id', auth()->id())->sum('total');
-                        $keranjangItems = \App\Models\Keranjang::where('user_id', auth()->id())->count();
-                    @endphp
-                    
-                    <div class="row text-center">
-                        <div class="col-4">
-                            <h4 class="text-primary">{{ $totalTransaksi }}</h4>
-                            <small class="text-muted">Total Pesanan</small>
-                        </div>
-                        <div class="col-4">
-                            <h4 class="text-success">{{ $keranjangItems }}</h4>
-                            <small class="text-muted">Item Keranjang</small>
-                        </div>
-                        <div class="col-4">
-                            <h4 class="text-info">Rp {{ number_format($totalBelanja, 0, ',', '.') }}</h4>
-                            <small class="text-muted">Total Belanja</small>
-                        </div>
-                    </div>
-                    
-                    <hr>
-                    
-                    <div class="text-center">
-                        <span class="badge bg-success">Pemilik Toko Aktif</span>
-                        @if($toko)
-                            <br><small class="text-muted">Toko: {{ $toko->nama }}</small>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     {{-- Link kembali ke customer area dengan route yang benar --}}
     <div class="mt-4">
         <a href="{{ route('customer.area') }}" class="btn btn-outline-primary">
@@ -297,6 +159,9 @@
         </a>
         <a href="{{ route('pemilik-toko.keranjang') }}" class="btn btn-outline-success ms-2">
             <i class="bi bi-cart3"></i> Keranjang Belanja
+            @php
+                $jumlahKeranjang = \App\Models\Keranjang::where('user_id', auth()->id())->sum('jumlah');
+            @endphp
             @if($jumlahKeranjang > 0)
                 <span class="badge bg-danger">{{ $jumlahKeranjang }}</span>
             @endif

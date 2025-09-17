@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 class HomeController extends Controller
 {
     /**
-     * Tampilkan halaman home dengan logic redirect yang tepat - TERMASUK KATEGORI TOKO
+     * Tampilkan halaman home - DENGAN DEBUG GAMBAR
      */
     public function index()
     {
@@ -29,11 +29,28 @@ class HomeController extends Controller
             }
         }
 
-        // Ambil kategori admin (untuk guest)
+        // Ambil kategori admin untuk guest
         $kategoris = Kategori::all();
+        
+        // Ambil kategori dari toko dengan debug gambar
+        $kategoriToko = \App\Models\TokoKategori::with('toko')
+            ->whereHas('toko', function($query) {
+                $query->where('status', 'approved');
+            })
+            ->get();
 
-        // Jika belum login, tampilkan halaman guest
-        return view('halaman-produk-guest', compact('kategoris'));
+        // Debug: Log path gambar untuk troubleshooting
+        foreach($kategoriToko as $kategori) {
+            \Log::info('Kategori Toko Debug', [
+                'nama' => $kategori->nama,
+                'gambar' => $kategori->gambar,
+                'full_path' => $kategori->gambar ? asset('storage/' . $kategori->gambar) : null,
+                'file_exists' => $kategori->gambar ? file_exists(public_path('storage/' . $kategori->gambar)) : false
+            ]);
+        }
+
+        // Jika belum login, tampilkan halaman guest dengan kategori toko
+        return view('halaman-produk-guest', compact('kategoris', 'kategoriToko'));
     }
 
     /**

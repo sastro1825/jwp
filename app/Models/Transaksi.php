@@ -42,6 +42,14 @@ class Transaksi extends Model
     }
 
     /**
+     * Relasi ke detail transaksi - RELASI BARU
+     */
+    public function detailTransaksi()
+    {
+        return $this->hasMany(DetailTransaksi::class);
+    }
+
+    /**
      * Scope untuk status tertentu
      */
     public function scopePending($query)
@@ -95,5 +103,13 @@ class Transaksi extends Model
     public function getTrackingNumberAttribute()
     {
         return $this->shippingOrder ? $this->shippingOrder->tracking_number : null;
+    }
+
+    /**
+     * Get total dari detail transaksi - FUNGSI HELPER
+     */
+    public function getTotalFromDetails()
+    {
+        return $this->detailTransaksi()->sum('subtotal_item');
     }
 }

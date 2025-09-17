@@ -12,16 +12,16 @@ class Keranjang extends Model
     protected $table = 'keranjangs'; // Nama tabel keranjang
 
     /**
-     * The attributes that are mass assignable - DIPERBAIKI untuk support kategori dan produk
+     * The attributes that are mass assignable - DIPERBAIKI untuk support kategori, produk, dan toko_kategori
      */
     protected $fillable = [
         'user_id',        // ID user yang memiliki keranjang
-        'produk_id',      // ID produk (untuk buy dari produk) - DITAMBAHKAN
-        'kategori_id',    // ID kategori (untuk buy dari kategori)
-        'nama_item',      // Nama item (dari kategori/produk)
-        'harga_item',     // Harga item (dari kategori/produk)
-        'deskripsi_item', // Deskripsi item (dari kategori/produk)
-        'item_type',      // Jenis item: 'kategori' atau 'produk'
+        'produk_id',      // ID produk (untuk buy dari produk)
+        'kategori_id',    // ID kategori (untuk buy dari kategori admin)
+        'nama_item',      // Nama item (dari kategori/produk/toko_kategori)
+        'harga_item',     // Harga item
+        'deskripsi_item', // Deskripsi item
+        'item_type',      // Jenis item: 'kategori', 'produk', 'toko_kategori' - DITAMBAH SUPPORT TOKO_KATEGORI
         'jumlah',         // Jumlah item yang dibeli
     ];
 
@@ -244,6 +244,14 @@ class Keranjang extends Model
     }
 
     /**
+     * Method untuk cek apakah item adalah toko kategori - FUNGSI BARU
+     */
+    public function isTokoKategori()
+    {
+        return $this->item_type === 'toko_kategori';
+    }
+
+    /**
      * Method untuk mendapatkan gambar item - DITAMBAHKAN
      * Untuk kompatibilitas dengan view yang menampilkan gambar
      */
@@ -273,7 +281,7 @@ class Keranjang extends Model
     }
 
     /**
-     * Method untuk mendapatkan info sumber item - DITAMBAHKAN
+     * Method untuk mendapatkan sumber item - DIPERBAIKI dengan toko kategori
      */
     public function getSumberAttribute()
     {
@@ -283,6 +291,11 @@ class Keranjang extends Model
 
         if ($this->isProduk() && $this->produk && $this->produk->toko) {
             return 'Toko: ' . $this->produk->toko->nama;
+        }
+        
+        // Support untuk toko kategori - BARU
+        if ($this->isTokoKategori()) {
+            return 'Kategori Toko Mitra';
         }
 
         return 'Tidak Diketahui';

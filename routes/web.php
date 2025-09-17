@@ -103,7 +103,7 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     // Buy dari kategori admin
     Route::post('/buy-from-kategori/{kategori_id}', [CustomerController::class, 'buyFromKategori'])->name('customer.buy.from.kategori');
     
-    // Buy dari kategori toko - BARU DITAMBAHKAN
+    // Buy dari kategori toko
     Route::post('/buy-from-toko-kategori/{kategori_id}', [CustomerController::class, 'buyFromTokoKategori'])->name('customer.buy.from.toko.kategori');
     
     // Keranjang management
@@ -131,47 +131,48 @@ Route::middleware(['auth', 'role:customer'])->group(function () {
     Route::get('/keranjang/data', [CustomerController::class, 'getKeranjangData'])->name('customer.keranjang.data');
 });
 
-// Pemilik Toko Routes - menggunakan controller khusus dan customer controller
+// Pemilik Toko Routes
 Route::middleware(['auth', 'role:pemilik_toko'])->prefix('pemilik-toko')->name('pemilik-toko.')->group(function () {
     // Dashboard pemilik toko
     Route::get('/dashboard', function() {
         return view('pemilik-toko.dashboard');
     })->name('dashboard');
     
-    // Kelola kategori dengan controller khusus (untuk database toko_kategoris)
+    // Kelola kategori dengan controller khusus
     Route::get('/kategori', [PemilikTokoController::class, 'manageKategori'])->name('kategori');
     Route::post('/kategori/store', [PemilikTokoController::class, 'storeKategori'])->name('kategori.store');
     Route::get('/kategori/{id}/edit', [PemilikTokoController::class, 'editKategori'])->name('kategori.edit');
     Route::patch('/kategori/{id}', [PemilikTokoController::class, 'updateKategori'])->name('kategori.update');
     Route::delete('/kategori/{id}', [PemilikTokoController::class, 'deleteKategori'])->name('kategori.delete');
     
-    // Kelola shipping orders dengan controller khusus
+    // Kelola shipping orders
     Route::get('/shipping', [PemilikTokoController::class, 'manageShippingOrders'])->name('shipping');
+    // Route update shipping status - ROUTE BARU
+    Route::patch('/shipping/{id}/status', [PemilikTokoController::class, 'updateShippingStatus'])->name('shipping.status');
     
-    // Pemilik toko bisa akses semua fitur customer dengan prefix
-    // Buy dari kategori admin (sama seperti customer)
+    // Buy dari kategori admin
     Route::post('/buy-from-kategori/{kategori_id}', [CustomerController::class, 'buyFromKategori'])->name('buy.from.kategori');
     
-    // Buy dari kategori toko - BARU DITAMBAHKAN
+    // Buy dari kategori toko
     Route::post('/buy-from-toko-kategori/{kategori_id}', [CustomerController::class, 'buyFromTokoKategori'])->name('buy.from.toko.kategori');
     
-    // Keranjang management (sama seperti customer)
+    // Keranjang management
     Route::get('/keranjang', [CustomerController::class, 'keranjang'])->name('keranjang');
     Route::patch('/keranjang/update/{keranjang_id}', [CustomerController::class, 'updateKeranjang'])->name('keranjang.update');
     Route::delete('/keranjang/hapus/{keranjang_id}', [CustomerController::class, 'hapusKeranjang'])->name('keranjang.hapus');
     
-    // Checkout (sama seperti customer)
+    // Checkout
     Route::post('/checkout', [CustomerController::class, 'checkout'])->name('checkout');
     
-    // Order History (sama seperti customer)
+    // Order History
     Route::get('/order-history', [CustomerController::class, 'orderHistory'])->name('order.history');
     Route::post('/cancel-order/{id}', [CustomerController::class, 'cancelOrder'])->name('cancel.order');
     Route::get('/download-laporan/{transaksi_id}', [CustomerController::class, 'downloadLaporan'])->name('download.laporan');
     
-    // Feedback (sama seperti customer)
+    // Feedback
     Route::post('/feedback', [CustomerController::class, 'submitFeedback'])->name('feedback');
     
-    // AJAX Routes untuk pemilik toko
+    // AJAX Routes
     Route::get('/keranjang/data', [CustomerController::class, 'getKeranjangData'])->name('keranjang.data');
 });
 

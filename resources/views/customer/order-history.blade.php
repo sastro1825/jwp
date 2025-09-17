@@ -73,48 +73,38 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-8">
-                                    {{-- Detail Items yang Dibeli --}}
+                                    {{-- Detail Items yang Dibeli - DIPERBAIKI type casting --}}
                                     <h6>Barang yang Dipesan:</h6>
-                                    {{-- Ambil data keranjang berdasarkan user dan waktu transaksi --}}
                                     @php
-                                        // Simulasi items berdasarkan total transaksi
-                                        // Karena keranjang sudah dihapus setelah checkout, kita buat estimasi
-                                        $estimatedItems = [];
-                                        $totalWithoutTax = $transaksi->total / 1.1; // Karena ada pajak 10%
-                                        
-                                        // Ambil kategori yang mungkin dibeli berdasarkan harga
-                                        $possibleKategoris = \App\Models\Kategori::where('harga', '<=', $totalWithoutTax)
-                                            ->orderBy('harga', 'desc')
-                                            ->take(3)
-                                            ->get();
-                                            
-                                        if($possibleKategoris->count() > 0) {
-                                            $estimatedItems = $possibleKategoris;
-                                        }
+                                        // Ambil detail transaksi yang sebenarnya dari database
+                                        $detailItems = \App\Models\DetailTransaksi::where('transaksi_id', $transaksi->id)->get();
                                     @endphp
-                                    
-                                    @if(count($estimatedItems) > 0)
+
+                                    @if($detailItems->count() > 0)
                                         <div class="row">
-                                            @foreach($estimatedItems as $item)
+                                            @foreach($detailItems as $item)
                                                 <div class="col-md-6 mb-3">
                                                     <div class="d-flex align-items-center">
                                                         <div class="me-3">
-                                                            @if($item->gambar)
-                                                                <img src="{{ asset('storage/' . $item->gambar) }}" 
-                                                                     alt="{{ $item->nama }}" 
-                                                                     class="rounded"
-                                                                     style="width: 60px; height: 60px; object-fit: cover;">
-                                                            @else
-                                                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
-                                                                     style="width: 60px; height: 60px;">
+                                                            {{-- Icon berdasarkan tipe item --}}
+                                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                                                 style="width: 60px; height: 60px;">
+                                                                @if($item->item_type === 'toko_kategori')
+                                                                    <i class="bi bi-shop text-success"></i>
+                                                                @else
                                                                     <i class="bi bi-heart-pulse text-primary"></i>
-                                                                </div>
-                                                            @endif
+                                                                @endif
+                                                            </div>
                                                         </div>
                                                         <div>
-                                                            <h6 class="mb-1">{{ $item->nama }}</h6>
-                                                            <span class="badge bg-info">{{ $item->getCategoryTypeLabel() }}</span>
-                                                            <br><small class="text-success">Rp {{ number_format($item->harga, 0, ',', '.') }}</small>
+                                                            <h6 class="mb-1">{{ $item->nama_item }}</h6>
+                                                            <span class="badge bg-{{ $item->item_type === 'toko_kategori' ? 'success' : 'info' }}">
+                                                                {{ $item->item_type === 'toko_kategori' ? 'Toko Mitra' : ucwords($item->item_type) }}
+                                                            </span>
+                                                            <br><small class="text-success">
+                                                                {{ $item->jumlah }}x Rp {{ number_format((float)$item->harga_item, 0, ',', '.') }} = 
+                                                                Rp {{ number_format((float)$item->subtotal_item, 0, ',', '.') }}
+                                                            </small>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -123,7 +113,7 @@
                                     @else
                                         <div class="alert alert-info">
                                             <i class="bi bi-info-circle"></i>
-                                            Detail barang tidak tersedia. Total: Rp {{ number_format($transaksi->total, 0, ',', '.') }}
+                                            Detail barang tidak tersedia.
                                         </div>
                                     @endif
 

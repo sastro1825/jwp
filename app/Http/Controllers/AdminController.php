@@ -407,11 +407,18 @@ class AdminController extends Controller
     }
 
     /**
-     * Kelola Shipping Orders
+     * Kelola Shipping Orders admin - FILTER HANYA NON-TOKO KATEGORI
      */
     public function manageShippingOrders()
     {
+        // Hanya tampilkan shipping untuk transaksi yang BUKAN dari toko kategori
         $shippingOrders = ShippingOrder::with(['transaksi.user'])
+            ->whereHas('transaksi', function($query) {
+                // Filter: hanya transaksi yang tidak mengandung item toko_kategori
+                $query->whereDoesntHave('detailTransaksi', function($subQuery) {
+                    $subQuery->where('item_type', 'toko_kategori');
+                });
+            })
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         

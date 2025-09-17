@@ -112,13 +112,19 @@
                         @foreach($kategoris as $kategori)
                         <div class="col-md-4 col-lg-3 mb-3">
                             <div class="card h-100 kategori-card shadow-sm">
-                                {{-- Gambar Kategori dengan ukuran tetap --}}
+                                {{-- Gambar Kategori dengan ukuran tetap - PERBAIKI PATH GAMBAR --}}
                                 <div class="position-relative">
                                     @if($kategori->gambar)
                                         <img src="{{ asset('storage/' . $kategori->gambar) }}" 
                                              alt="{{ $kategori->nama }}" 
                                              class="card-img-top"
-                                             style="height: 200px; object-fit: cover;">
+                                             style="height: 200px; object-fit: cover;"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        {{-- Fallback jika gambar error --}}
+                                        <div class="card-img-top bg-light align-items-center justify-content-center" 
+                                             style="height: 200px; display: none;">
+                                            <i class="bi bi-heart-pulse text-primary" style="font-size: 3rem;"></i>
+                                        </div>
                                     @else
                                         {{-- Placeholder jika tidak ada gambar --}}
                                         <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
@@ -193,13 +199,19 @@
                             @foreach($kategoriToko as $kategori)
                             <div class="col-md-4 col-lg-3 mb-3">
                                 <div class="card h-100 kategori-card shadow-sm border-success">
-                                    {{-- Gambar Kategori Toko --}}
+                                    {{-- Gambar Kategori Toko - PERBAIKI PATH GAMBAR --}}
                                     <div class="position-relative">
                                         @if($kategori->gambar)
                                             <img src="{{ asset('storage/' . $kategori->gambar) }}" 
                                                  alt="{{ $kategori->nama }}" 
                                                  class="card-img-top"
-                                                 style="height: 200px; object-fit: cover;">
+                                                 style="height: 200px; object-fit: cover;"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                            {{-- Fallback untuk gambar error --}}
+                                            <div class="card-img-top bg-light align-items-center justify-content-center" 
+                                                 style="height: 200px; display: none;">
+                                                <i class="bi bi-shop text-success" style="font-size: 3rem;"></i>
+                                            </div>
                                         @else
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
                                                  style="height: 200px;">
@@ -241,7 +253,7 @@
                                             Oleh: {{ $kategori->toko->nama ?? 'Toko Tidak Diketahui' }}
                                         </small>
                                         
-                                        {{-- Tombol View untuk kategori toko --}}
+                                        {{-- Tombol View dan Buy untuk kategori toko - DIPERBAIKI --}}
                                         <div class="mt-auto">
                                             <div class="d-grid gap-2">
                                                 <button class="btn btn-outline-success btn-sm" 
@@ -249,8 +261,22 @@
                                                     <i class="bi bi-eye"></i> View Toko
                                                 </button>
                                                 
-                                                {{-- Note: Kategori toko tidak bisa di-buy langsung, hanya untuk display --}}
-                                                <small class="text-muted text-center">Hubungi toko untuk pembelian</small>
+                                                {{-- Tombol Buy kategori toko - DIPERBAIKI BISA DIBELI --}}
+                                                @if(auth()->user()->role === 'pemilik_toko')
+                                                    <form action="{{ route('pemilik-toko.buy.from.toko.kategori', $kategori->id) }}" method="POST" class="buy-form">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-success btn-sm w-100">
+                                                            <i class="bi bi-cart-plus"></i> Beli dari Toko
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <form action="{{ route('customer.buy.from.toko.kategori', $kategori->id) }}" method="POST" class="buy-form">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-success btn-sm w-100">
+                                                            <i class="bi bi-cart-plus"></i> Beli dari Toko
+                                                        </button>
+                                                    </form>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -724,6 +750,11 @@
 .d-grid.gap-2 {
     gap: 0.5rem !important;
 }
+
+/* Fallback untuk gambar error */
+.card-img-top + .card-img-top {
+    display: none;
+}
 </style>
 @endpush
 
@@ -736,7 +767,6 @@ let currentKategoriId = null;
 function viewKategori(id) {
     currentKategoriId = id;
     
-    // Find kategori data dari server-side data
     @foreach($kategoris as $kategori)
         if (id === {{ $kategori->id }}) {
             const modal = new bootstrap.Modal(document.getElementById('kategoriDetailModal'));
@@ -745,9 +775,17 @@ function viewKategori(id) {
                     <div class="col-md-6">
                         <div class="text-center mb-3">
                             @if($kategori->gambar)
-                                <img src="{{ asset('storage/' . $kategori->gambar) }}" class="img-fluid rounded" style="max-height: 250px;">
+                                <img src="{{ asset('storage/' . $kategori->gambar) }}" 
+                                     class="img-fluid rounded" 
+                                     style="max-height: 250px;"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="bg-light d-flex align-items-center justify-content-center rounded" 
+                                     style="height: 250px; display: none;">
+                                    <i class="bi bi-heart-pulse text-primary" style="font-size: 4rem;"></i>
+                                </div>
                             @else
-                                <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 250px;">
+                                <div class="bg-light d-flex align-items-center justify-content-center rounded" 
+                                     style="height: 250px;">
                                     <i class="bi bi-heart-pulse text-primary" style="font-size: 4rem;"></i>
                                 </div>
                             @endif
@@ -776,7 +814,10 @@ function viewKategori(id) {
             `;
             
             // Update button untuk buy dari modal dengan route sesuai role
-            document.getElementById('buyFromModal').onclick = function() {
+            const buyBtn = document.getElementById('buyFromModal');
+            buyBtn.style.display = 'block';
+            buyBtn.disabled = false;
+            buyBtn.onclick = function() {
                 // Submit form buy dari kategori dengan route sesuai role
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -796,7 +837,6 @@ function viewKategori(id) {
                 document.body.appendChild(form);
                 
                 // Add loading state
-                const buyBtn = document.getElementById('buyFromModal');
                 buyBtn.disabled = true;
                 buyBtn.classList.add('loading');
                 buyBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
@@ -821,9 +861,17 @@ function viewKategoriToko(id) {
                         <div class="col-md-6">
                             <div class="text-center mb-3">
                                 @if($kategori->gambar)
-                                    <img src="{{ asset('storage/' . $kategori->gambar) }}" class="img-fluid rounded" style="max-height: 250px;">
+                                    <img src="{{ asset('storage/' . $kategori->gambar) }}" 
+                                         class="img-fluid rounded" 
+                                         style="max-height: 250px;"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="bg-light d-flex align-items-center justify-content-center rounded" 
+                                         style="height: 250px; display: none;">
+                                        <i class="bi bi-shop text-success" style="font-size: 4rem;"></i>
+                                    </div>
                                 @else
-                                    <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 250px;">
+                                    <div class="bg-light d-flex align-items-center justify-content-center rounded" 
+                                         style="height: 250px;">
                                         <i class="bi bi-shop text-success" style="font-size: 4rem;"></i>
                                     </div>
                                 @endif
@@ -852,18 +900,45 @@ function viewKategoriToko(id) {
                                 @endif
                             </div>
                             
-                            <div class="alert alert-warning">
+                            <div class="alert alert-success">
                                 <i class="bi bi-info-circle"></i>
-                                <strong>Info:</strong> Kategori ini disediakan oleh toko mitra. Hubungi toko untuk informasi pembelian.
+                                <strong>Info:</strong> Kategori ini disediakan oleh toko mitra. Klik tombol Beli untuk menambahkan ke keranjang.
                             </div>
                         </div>
                     </div>
                 `;
                 
-                // Disable buy button for kategori toko
+                // Enable buy button for kategori toko
                 const buyBtn = document.getElementById('buyFromModal');
-                buyBtn.disabled = true;
-                buyBtn.style.display = 'none';
+                buyBtn.style.display = 'block';
+                buyBtn.disabled = false;
+                buyBtn.innerHTML = '<i class="bi bi-cart-plus"></i> Beli dari Toko';
+                buyBtn.onclick = function() {
+                    // Submit form buy dari kategori toko dengan route sesuai role
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    
+                    @if(auth()->user()->role === 'pemilik_toko')
+                        form.action = '{{ route("pemilik-toko.buy.from.toko.kategori", ":id") }}'.replace(':id', {{ $kategori->id }});
+                    @else
+                        form.action = '{{ route("customer.buy.from.toko.kategori", ":id") }}'.replace(':id', {{ $kategori->id }});
+                    @endif
+                    
+                    const token = document.createElement('input');
+                    token.type = 'hidden';
+                    token.name = '_token';
+                    token.value = '{{ csrf_token() }}';
+                    form.appendChild(token);
+                    
+                    document.body.appendChild(form);
+                    
+                    // Add loading state
+                    buyBtn.disabled = true;
+                    buyBtn.classList.add('loading');
+                    buyBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+                    
+                    form.submit();
+                };
                 
                 modal.show();
                 return;
@@ -923,6 +998,25 @@ document.addEventListener('DOMContentLoaded', function() {
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+
+    // Lazy loading untuk gambar kategori
+    const images = document.querySelectorAll('.card-img-top[src]');
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.style.opacity = '0';
+                    img.onload = () => {
+                        img.style.transition = 'opacity 0.3s';
+                        img.style.opacity = '1';
+                    };
+                    observer.unobserve(img);
+                }
+            });
+        });
+        images.forEach(img => imageObserver.observe(img));
+    }
 });
 
 // Function untuk refresh keranjang badge
@@ -1082,29 +1176,6 @@ document.addEventListener('keydown', function(e) {
         if (modal) {
             modal.hide();
         }
-    }
-});
-
-// Lazy loading untuk gambar kategori
-document.addEventListener('DOMContentLoaded', function() {
-    const images = document.querySelectorAll('.card-img-top[src]');
-    
-    if ('IntersectionObserver' in window) {
-        const imageObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    img.style.opacity = '0';
-                    img.onload = () => {
-                        img.style.transition = 'opacity 0.3s';
-                        img.style.opacity = '1';
-                    };
-                    observer.unobserve(img);
-                }
-            });
-        });
-        
-        images.forEach(img => imageObserver.observe(img));
     }
 });
 
