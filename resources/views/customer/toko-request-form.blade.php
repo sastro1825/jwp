@@ -6,7 +6,7 @@
     <div class="row">
         <div class="col-12">
             <h1 class="mb-4">Permohonan Pembukaan Toko</h1>
-            <p class="text-muted">Ajukan permohonan untuk membuka toko online Anda di OSS</p>
+            <p class="text-muted">Ajukan permohonan untuk membuka toko online Anda di Tukupedia</p>
         </div>
     </div>
 
@@ -184,6 +184,7 @@
                                     <li>Admin berhak menyetujui atau menolak permohonan</li>
                                     <li>Jika disetujui, Anda akan mendapatkan akses admin toko</li>
                                     <li>Semua produk yang dijual harus sesuai dengan standar kesehatan</li>
+                                    <li>Ingin membantu masyarakat dengan menyediakan obat-obatan berkualitas melalui platform Tukupedia</li>
                                 </ul>
                             </div>
 

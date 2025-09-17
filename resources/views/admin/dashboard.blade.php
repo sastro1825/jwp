@@ -1,12 +1,41 @@
 @extends('layouts.app')
 
+@push('styles')
+<style>
+/* CSS untuk menyamakan tinggi semua card menu admin */
+.admin-menu-card {
+    height: 100%;
+    min-height: 280px; /* Tinggi minimum untuk konsistensi */
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-menu-card .card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+    padding: 1.5rem;
+}
+
+.admin-menu-card .card-text {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 1rem 0;
+}
+</style>
+@endpush
+
 @section('content')
-{{-- Dashboard Admin OSS tanpa statistik detail --}}
+{{-- Dashboard Admin Tukupedia --}}
 <div class="container">
     <div class="row">
         <div class="col-12">
-            <h1 class="mb-4">Dashboard Admin OSS</h1>
-            <p class="text-muted">Kelola sistem online shopping untuk toko alat kesehatan</p>
+            <h1 class="mb-4">Dashboard Admin Tukupedia</h1>
+            <p class="text-muted">Kelola sistem toko alat kesehatan online</p>
         </div>
     </div>
     
@@ -87,8 +116,9 @@
             <h3 class="mb-3">Menu Utama Admin</h3>
         </div>
         
+        {{-- Card Kelola Customer --}}
         <div class="col-md-4 mb-3">
-            <div class="card">
+            <div class="card admin-menu-card">
                 <div class="card-body text-center">
                     <i class="bi bi-people-fill" style="font-size: 3rem; color: #007bff;"></i>
                     <h5 class="card-title mt-2">Kelola Customer</h5>
@@ -98,8 +128,9 @@
             </div>
         </div>
         
+        {{-- Card Kelola Kategori dengan class yang sama --}}
         <div class="col-md-4 mb-3">
-            <div class="card">
+            <div class="card admin-menu-card">
                 <div class="card-body text-center">
                     <i class="bi bi-tags-fill" style="font-size: 3rem; color: #28a745;"></i>
                     <h5 class="card-title mt-2">Kelola Kategori</h5>
@@ -109,8 +140,9 @@
             </div>
         </div>
         
+        {{-- Card Permohonan Toko --}}
         <div class="col-md-4 mb-3">
-            <div class="card">
+            <div class="card admin-menu-card">
                 <div class="card-body text-center">
                     <i class="bi bi-shop" style="font-size: 3rem; color: #ffc107;"></i>
                     <h5 class="card-title mt-2">Permohonan Toko</h5>
@@ -125,8 +157,9 @@
             </div>
         </div>
         
+        {{-- Card Guest Book --}}
         <div class="col-md-4 mb-3">
-            <div class="card">
+            <div class="card admin-menu-card">
                 <div class="card-body text-center">
                     <i class="bi bi-chat-left-text-fill" style="font-size: 3rem; color: #17a2b8;"></i>
                     <h5 class="card-title mt-2">Guest Book</h5>
@@ -141,8 +174,9 @@
             </div>
         </div>
         
+        {{-- Card Shipping Order --}}
         <div class="col-md-4 mb-3">
-            <div class="card">
+            <div class="card admin-menu-card">
                 <div class="card-body text-center">
                     <i class="bi bi-truck" style="font-size: 3rem; color: #6c757d;"></i>
                     <h5 class="card-title mt-2">Shipping Order</h5>

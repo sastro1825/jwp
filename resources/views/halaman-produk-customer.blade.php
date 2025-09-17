@@ -5,7 +5,8 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <h1 class="mb-4">Product Page - Toko Alat Kesehatan</h1>
+            {{-- Title halaman customer --}}
+            <h1 class="mb-4">Product Page - Tukupedia</h1>
             <p class="text-muted">
                 Selamat datang, {{ auth()->user()->name }}! 
                 @if(auth()->user()->role === 'pemilik_toko')

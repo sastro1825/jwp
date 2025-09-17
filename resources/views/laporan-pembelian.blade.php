@@ -47,8 +47,8 @@
 </head>
 <body>
     <div class="header">
-        <div class="company-name">Toko Alat Kesehatan - Laporan Belanja Anda</div>
-        <div>OSS - Online Shopping System</div>
+        <div class="company-name">Tukupedia - Laporan Belanja Anda</div>
+        <div>Toko Alat Kesehatan Online</div>
     </div>
     
     {{-- Informasi Customer --}}
@@ -128,10 +128,10 @@
         <p><strong>Tanda Tangan Customer:</strong> ________________</p>
     </div>
     
-    {{-- Footer --}}
+    {{-- Footer PDF --}}
     <div style="margin-top: 30px; text-align: center; font-size: 10px;">
         <p>Dokumen dibuat otomatis pada {{ now()->format('d/m/Y H:i:s') }}</p>
-        <p>OSS - Online Shopping System | fajarstudent28@gmail.com</p>
+        <p>Tukupedia | fajarstudent28@gmail.com</p>
     </div>
 </body>
 </html>

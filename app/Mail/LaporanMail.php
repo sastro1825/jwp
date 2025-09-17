@@ -32,7 +32,7 @@ class LaporanMail extends Mailable
      */
     public function build()
     {
-        $email = $this->subject('Laporan Pembelian OSS - Transaksi #' . $this->transaksi->id)
+        $email = $this->subject('Laporan Pembelian Tukupedia - Transaksi #' . $this->transaksi->id)
                       ->view('emails.laporan') // Gunakan view yang sudah ada
                       ->with([
                           'transaksi' => $this->transaksi, // Pass data transaksi ke view

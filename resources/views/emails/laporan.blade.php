@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Pembelian OSS</title>
+    <title>Laporan Pembelian Tukupedia</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -44,18 +44,18 @@
     </style>
 </head>
 <body>
-    {{-- Header Email --}}
+    {{-- Header Email diubah --}}
     <div class="header">
-        <h1>OSS - Online Shopping System</h1>
+        <h1>Tukupedia</h1>
         <h2>Laporan Pembelian Anda</h2>
-        <p>Toko Alat Kesehatan</p>
+        <p>Toko Alat Kesehatan Online</p>
     </div>
 
     {{-- Content Email --}}
     <div class="content">
         <h3>Halo {{ $customer->name }},</h3>
         
-        <p>Terima kasih telah berbelanja di <strong>OSS - Online Shopping System</strong>, toko alat kesehatan terpercaya.</p>
+        <p>Terima kasih telah berbelanja di <strong>Tukupedia</strong>, toko alat kesehatan terpercaya online.</p>
         
         <p>Pembelian Anda telah berhasil diproses dan laporan detail transaksi telah dilampirkan dalam format PDF pada email ini.</p>
 
@@ -91,16 +91,16 @@
 
         <p>Jika ada pertanyaan atau kendala, jangan ragu untuk menghubungi tim customer service kami.</p>
 
-        <p>Terima kasih atas kepercayaan Anda berbelanja di OSS!</p>
+        <p>Terima kasih atas kepercayaan Anda berbelanja di Tukupedia!</p>
 
         <p>Salam sehat,<br>
-        <strong>Tim OSS - Online Shopping System</strong></p>
+        <strong>Tim Tukupedia</strong></p>
     </div>
 
-    {{-- Footer dengan waktu Indonesia --}}
+    {{-- Footer email --}}
     <div style="margin-top: 30px; text-align: center; font-size: 10px;">
         <p>Dokumen dibuat otomatis pada {{ now()->setTimezone('Asia/Jakarta')->format('d/m/Y H:i:s') }} WIB</p>
-        <p>OSS - Online Shopping System | fajarstudent28@gmail.com</p>
+        <p>Tukupedia | fajarstudent28@gmail.com</p>
     </div>
 </body>
 </html>

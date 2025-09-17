@@ -5,8 +5,9 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <h1 class="mb-4">Product Page - Toko Alat Kesehatan</h1>
-            <p class="text-muted">Selamat datang di OSS! Silakan <a href="{{ route('register') }}" class="text-primary">daftar</a> atau <a href="{{ route('login') }}" class="text-primary">login</a> untuk mulai berbelanja.</p>
+            {{-- Title untuk guest --}}
+            <h1 class="mb-4">Product Page - Tukupedia</h1>
+            <p class="text-muted">Selamat datang di Tukupedia! Silakan <a href="{{ route('register') }}" class="text-primary">daftar</a> atau <a href="{{ route('login') }}" class="text-primary">login</a> untuk mulai berbelanja.</p>
         </div>
     </div>
 

@@ -41,12 +41,18 @@ class AdminController extends Controller
      */
     public function manageCustomers()
     {
+        // Perbaikan: Hitung jumlah customer untuk ditampilkan di view
+        $jumlahCustomer = User::where('role', 'customer')
+            ->orWhere('role', 'pemilik_toko')
+            ->count();
+        
         $customers = User::where('role', 'customer')
             ->orWhere('role', 'pemilik_toko')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         
-        return view('admin.manage-customers', compact('customers'));
+        // Perbaikan: Kirim variabel $jumlahCustomer ke view
+        return view('admin.manage-customers', compact('customers', 'jumlahCustomer'));
     }
 
     /**
