@@ -29,8 +29,8 @@ class Keranjang extends Model
      * The attributes that should be cast - untuk konversi data type
      */
     protected $casts = [
-        'harga_item' => 'decimal:2', // Cast harga ke decimal
-        'jumlah' => 'integer',       // Cast jumlah ke integer
+        'harga_item' => 'float', // Ubah dari decimal ke float
+        'jumlah' => 'integer',   // Cast jumlah ke integer
     ];
 
     /**
@@ -79,24 +79,23 @@ class Keranjang extends Model
     }
 
     /**
-     * Accessor untuk mendapatkan harga item - DIPERBAIKI
-     * Otomatis ambil dari kategori/produk jika harga_item kosong
+     * Accessor untuk mendapatkan harga item dengan type safety
      */
     public function getHargaAttribute()
     {
         if ($this->harga_item) {
-            return $this->harga_item;
+            return (float) $this->harga_item; // Cast ke float untuk menghindari error
         }
 
         if ($this->kategori) {
-            return $this->kategori->harga;
+            return (float) $this->kategori->harga;
         }
 
         if ($this->produk) {
-            return $this->produk->harga;
+            return (float) $this->produk->harga;
         }
 
-        return 0;
+        return 0.0; // Return float 0
     }
 
     /**
@@ -121,12 +120,11 @@ class Keranjang extends Model
     }
 
     /**
-     * Accessor untuk mendapatkan subtotal item
-     * Usage: $item->subtotal
+     * Accessor untuk mendapatkan subtotal dengan type safety
      */
     public function getSubtotalAttribute()
     {
-        return $this->jumlah * $this->harga;
+        return (float) $this->jumlah * $this->getHargaAttribute();
     }
 
     /**

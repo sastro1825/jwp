@@ -63,11 +63,12 @@
             <h4>Informasi Pembelian:</h4>
             <ul>
                 <li><strong>No. Transaksi:</strong> {{ $transaksi->id }}</li>
-                <li><strong>Tanggal Pembelian:</strong> {{ $transaksi->created_at->format('d/m/Y H:i') }}</li>
+                {{-- Perbaikan format tanggal dengan timezone Indonesia --}}
+                <li><strong>Tanggal Pembelian:</strong> {{ $transaksi->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') }} WIB</li>
                 <li><strong>Customer:</strong> {{ $customer->name }}</li>
                 <li><strong>Email:</strong> {{ $customer->email }}</li>
                 <li><strong>Total Pembayaran:</strong> Rp {{ number_format($transaksi->total, 0, ',', '.') }}</li>
-                <li><strong>Metode Pembayaran:</strong> {{ $transaksi->metode_pembayaran == 'prepaid' ? 'Prepaid (Kartu/PayPal)' : 'Postpaid (COD)' }}</li>
+                <li><strong>Metode Pembayaran:</strong> {{ $transaksi->metode_pembayaran == 'prepaid' ? 'Prepaid (Kartu/PayPal)' : 'COD (Cash On Delivery)' }}</li>
             </ul>
         </div>
 
@@ -96,11 +97,10 @@
         <strong>Tim OSS - Online Shopping System</strong></p>
     </div>
 
-    {{-- Footer Email --}}
-    <div class="footer">
-        <p>&copy; {{ date('Y') }} OSS - Online Shopping System. Toko Alat Kesehatan Terpercaya.</p>
-        <p>Email: fajarstudent28@gmail.com | Website: www.oss.com</p>
-        <p><em>Email ini dikirim secara otomatis, mohon tidak membalas email ini.</em></p>
+    {{-- Footer dengan waktu Indonesia --}}
+    <div style="margin-top: 30px; text-align: center; font-size: 10px;">
+        <p>Dokumen dibuat otomatis pada {{ now()->setTimezone('Asia/Jakarta')->format('d/m/Y H:i:s') }} WIB</p>
+        <p>OSS - Online Shopping System | fajarstudent28@gmail.com</p>
     </div>
 </body>
 </html>

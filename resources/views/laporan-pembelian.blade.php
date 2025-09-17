@@ -58,7 +58,7 @@
     <p><strong>Tanggal:</strong> {{ $transaksi->created_at->format('d/m/Y H:i') }}</p>
     <p><strong>No. Transaksi:</strong> {{ $transaksi->id }}</p>
     
-    {{-- Tabel Item Pembelian --}}
+    {{-- Tabel Item Pembelian dengan data yang benar --}}
     <table>
         <tr>
             <th>No</th>
@@ -72,47 +72,38 @@
         @foreach($items as $key => $item)
         <tr>
             <td>{{ $key + 1 }}</td>
-            <td>{{ $item->nama }}</td>
+            {{-- Perbaikan nama item --}}
+            <td>{{ $item->nama_item ?? 'Item tidak diketahui' }}</td>
             <td>
-                {{-- Support untuk produk dan kategori --}}
+                {{-- Perbaikan ID/Kode berdasarkan tipe item --}}
                 @if($item->item_type === 'kategori')
-                    KAT-{{ $item->kategori_id }}
-                @elseif($item->produk)
-                    {{ $item->produk->id_produk }}
+                    KAT-{{ $loop->index + 1 }}
+                @elseif($item->item_type === 'toko_kategori')
+                    TOKO-{{ $loop->index + 1 }}
                 @else
-                    -
+                    PROD-{{ $loop->index + 1 }}
                 @endif
             </td>
             <td>
-                {{-- Tampilkan tipe item --}}
+                {{-- Perbaikan tipe item --}}
                 @if($item->item_type === 'kategori')
-                    Kategori
+                    Kategori Admin
+                @elseif($item->item_type === 'toko_kategori')
+                    Kategori Toko
                 @else
                     Produk
                 @endif
             </td>
-            <td class="text-right">{{ $item->jumlah }}</td>
-            <td class="text-right">Rp. {{ number_format($item->harga, 0, ',', '.') }}</td>
-            <td class="text-right">Rp. {{ number_format($item->jumlah * $item->harga, 0, ',', '.') }}</td>
+            <td class="text-right">{{ $item->jumlah ?? 1 }}</td>
+            <td class="text-right">Rp. {{ number_format((float)($item->harga_item ?? 0), 0, ',', '.') }}</td>
+            <td class="text-right">Rp. {{ number_format((float)($item->subtotal_item ?? 0), 0, ',', '.') }}</td>
         </tr>
         @endforeach
         
-        {{-- Baris Subtotal --}}
-        <tr>
-            <td colspan="6" class="text-right"><strong>Subtotal:</strong></td>
-            <td class="text-right"><strong>Rp. {{ number_format($subtotal, 0, ',', '.') }}</strong></td>
-        </tr>
-        
-        {{-- Baris Pajak --}}
-        <tr>
-            <td colspan="6" class="text-right"><strong>Pajak (10%):</strong></td>
-            <td class="text-right"><strong>Rp. {{ number_format($pajak, 0, ',', '.') }}</strong></td>
-        </tr>
-        
         {{-- Baris Total --}}
         <tr class="total-row">
-            <td colspan="6" class="text-right"><strong>TOTAL (termasuk pajak 10%):</strong></td>
-            <td class="text-right"><strong>Rp. {{ number_format($total, 0, ',', '.') }}</strong></td>
+            <td colspan="6" class="text-right"><strong>TOTAL:</strong></td>
+            <td class="text-right"><strong>Rp. {{ number_format((float)$total, 0, ',', '.') }}</strong></td>
         </tr>
     </table>
     

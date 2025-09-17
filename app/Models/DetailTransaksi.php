@@ -17,12 +17,12 @@ class DetailTransaksi extends Model
         'harga_item', 
         'jumlah',
         'subtotal_item',
-        'item_type', // kategori, produk, toko_kategori
+        'item_type',
         'deskripsi_item'
     ];
 
     protected $casts = [
-        'harga_item' => 'float', // Cast ke float untuk menghindari error number_format
+        'harga_item' => 'float',
         'subtotal_item' => 'float',
         'jumlah' => 'integer',
     ];
@@ -44,7 +44,7 @@ class DetailTransaksi extends Model
     }
 
     /**
-     * Accessor untuk harga yang terformat - FUNGSI HELPER
+     * Accessor untuk harga yang terformat dengan type safety
      */
     public function getFormattedHargaAttribute()
     {
@@ -52,10 +52,32 @@ class DetailTransaksi extends Model
     }
 
     /**
-     * Accessor untuk subtotal yang terformat - FUNGSI HELPER
+     * Accessor untuk subtotal yang terformat dengan type safety
      */
     public function getFormattedSubtotalAttribute()
     {
         return 'Rp ' . number_format((float)$this->subtotal_item, 0, ',', '.');
+    }
+
+    /**
+     * Accessor untuk nama item dengan fallback
+     */
+    public function getNamaItemDisplayAttribute()
+    {
+        return $this->nama_item ?? 'Item tidak diketahui';
+    }
+
+    /**
+     * Accessor untuk tipe item yang readable
+     */
+    public function getItemTypeDisplayAttribute()
+    {
+        $types = [
+            'kategori' => 'Kategori Admin',
+            'toko_kategori' => 'Kategori Toko',
+            'produk' => 'Produk'
+        ];
+        
+        return $types[$this->item_type] ?? 'Tidak Diketahui';
     }
 }

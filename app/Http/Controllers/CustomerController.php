@@ -20,6 +20,72 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class CustomerController extends Controller
 {
     /**
+     * Cek apakah customer bisa menggunakan COD berdasarkan kota - PERBAIKAN LOGIC
+     */
+    private function canUseCOD($keranjangItems, $userCity)
+    {
+        // Jika tidak ada kota user, tidak bisa COD
+        if (!$userCity) {
+            \Log::info('COD Check: User tidak punya kota', ['user_city' => $userCity]);
+            return false;
+        }
+
+        // Cek apakah ada item dari toko kategori
+        $tokoItems = $keranjangItems->where('item_type', 'toko_kategori');
+        
+        if ($tokoItems->isEmpty()) {
+            // Jika semua item dari kategori admin, cek dengan admin kota
+            $adminCity = \App\Models\User::where('role', 'admin')->first()->city ?? null;
+            
+            if (!$adminCity) {
+                \Log::info('COD Check: Admin tidak punya kota', ['admin_city' => $adminCity]);
+                return false;
+            }
+            
+            $userCityLower = strtolower(trim($userCity));
+            $adminCityLower = strtolower(trim($adminCity));
+            
+            \Log::info('COD Check: Customer vs Admin kota', [
+                'user_city' => $userCityLower,
+                'admin_city' => $adminCityLower,
+                'same_city' => $userCityLower === $adminCityLower
+            ]);
+            
+            return $userCityLower === $adminCityLower;
+        }
+
+        // Jika ada item toko, cek setiap toko
+        foreach ($tokoItems as $item) {
+            // Ambil nama toko dari nama_item (format: "nama (Toko: nama_toko)")
+            preg_match('/\(Toko: (.+)\)/', $item->nama_item, $matches);
+            if (isset($matches[1])) {
+                $namaTokoFromItem = $matches[1];
+                
+                // Cari toko berdasarkan nama
+                $toko = \App\Models\Toko::where('nama', $namaTokoFromItem)->first();
+                if ($toko && $toko->user) {
+                    $tokoCity = strtolower(trim($toko->user->city));
+                    $customerCity = strtolower(trim($userCity));
+                    
+                    \Log::info('COD Check: Customer vs Toko kota', [
+                        'user_city' => $customerCity,
+                        'toko_city' => $tokoCity,
+                        'toko_name' => $namaTokoFromItem,
+                        'same_city' => $tokoCity === $customerCity
+                    ]);
+                    
+                    // Jika ada toko yang tidak se-kota, COD tidak tersedia
+                    if ($tokoCity !== $customerCity) {
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        return true; // Semua toko se-kota
+    }
+
+    /**
      * Buy produk dari kategori admin - masukkan ke keranjang
      */
     public function buyFromKategori($kategori_id)
@@ -108,7 +174,7 @@ class CustomerController extends Controller
     }
 
     /**
-     * Tampilkan keranjang belanja customer
+     * Tampilkan keranjang belanja customer dengan logik COD
      */
     public function keranjang()
     {
@@ -121,7 +187,10 @@ class CustomerController extends Controller
             return $item->jumlah * $item->harga_item;
         });
 
-        return view('customer.keranjang', compact('keranjangItems', 'totalHarga'));
+        // Cek apakah COD tersedia berdasarkan kota
+        $canUseCOD = $this->canUseCOD($keranjangItems, Auth::user()->city);
+
+        return view('customer.keranjang', compact('keranjangItems', 'totalHarga', 'canUseCOD'));
     }
 
     /**
@@ -165,7 +234,7 @@ class CustomerController extends Controller
     }
 
     /**
-     * Checkout - DIPERBAIKI untuk handle item toko kategori dengan benar
+     * Checkout dengan validasi COD yang ketat
      */
     public function checkout(Request $request)
     {
@@ -176,10 +245,6 @@ class CustomerController extends Controller
                 'alamat_pengiriman' => 'required|string|max:500',
                 'metode_pembayaran' => 'required|in:prepaid,postpaid',
                 'catatan' => 'nullable|string|max:1000',
-            ], [
-                'alamat_pengiriman.required' => 'Alamat pengiriman wajib diisi.',
-                'metode_pembayaran.required' => 'Metode pembayaran wajib dipilih.',
-                'metode_pembayaran.in' => 'Metode pembayaran tidak valid.',
             ]);
 
             $user_id = Auth::id();
@@ -190,13 +255,26 @@ class CustomerController extends Controller
                 return redirect()->back()->with('error', 'Keranjang kosong. Tambahkan produk terlebih dahulu.');
             }
 
-            // Hitung total dari keranjang yang sebenarnya
-            $subtotal = $keranjangItems->sum(function($item) {
-                return $item->jumlah * $item->harga_item;
+            // VALIDASI COD SEBELUM PROSES CHECKOUT
+            if ($validated['metode_pembayaran'] === 'postpaid') {
+                $canUseCOD = $this->canUseCOD($keranjangItems, $user->city);
+                
+                if (!$canUseCOD) {
+                    \Log::warning('COD Blocked at Checkout', [
+                        'user_id' => $user_id,
+                        'user_city' => $user->city,
+                        'payment_method' => $validated['metode_pembayaran']
+                    ]);
+                    
+                    return redirect()->back()->with('error', 
+                        'COD tidak tersedia karena Anda tidak se-kota dengan admin/toko. Silakan gunakan prepaid.');
+                }
+            }
+
+            // Hitung total
+            $total = $keranjangItems->sum(function($item) {
+                return (float) $item->jumlah * (float) $item->harga_item;
             });
-            
-            $pajak = $subtotal * 0.10; // Pajak 10% sesuai SRS
-            $total = $subtotal + $pajak;
 
             // Buat transaksi
             $transaksi = Transaksi::create([
@@ -208,16 +286,16 @@ class CustomerController extends Controller
                 'catatan' => $validated['catatan'],
             ]);
 
-            // Simpan detail transaksi dari keranjang yang sebenarnya
+            // Simpan detail transaksi
             foreach ($keranjangItems as $item) {
                 \App\Models\DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
-                    'nama_item' => $item->nama_item,
-                    'harga_item' => $item->harga_item,
-                    'jumlah' => $item->jumlah,
-                    'subtotal_item' => $item->jumlah * $item->harga_item,
-                    'item_type' => $item->item_type, // kategori, produk, atau toko_kategori
-                    'deskripsi_item' => $item->deskripsi_item
+                    'nama_item' => $item->nama_item ?? 'Item tidak diketahui',
+                    'harga_item' => (float) ($item->harga_item ?? 0),
+                    'jumlah' => (int) ($item->jumlah ?? 1),
+                    'subtotal_item' => (float) (($item->jumlah ?? 1) * ($item->harga_item ?? 0)),
+                    'item_type' => $item->item_type ?? 'kategori',
+                    'deskripsi_item' => $item->deskripsi_item ?? null
                 ]);
             }
 
@@ -232,84 +310,49 @@ class CustomerController extends Controller
                 'notes' => $validated['catatan'] ?: 'Pesanan dari ' . $user->name,
             ]);
 
-            Log::info('Shipping order created automatically', [
-                'transaksi_id' => $transaksi->id,
-                'shipping_order_id' => $shippingOrder->id,
-                'tracking_number' => $shippingOrder->tracking_number,
-                'user_id' => $user_id
-            ]);
-
-            // Generate PDF dengan item yang benar dari detail transaksi
+            // Generate PDF
             $items = \App\Models\DetailTransaksi::where('transaksi_id', $transaksi->id)->get();
-
+            
             $pdfPath = null;
             try {
                 $pdf = Pdf::loadView('laporan-pembelian', [
                     'user' => $user,
                     'transaksi' => $transaksi,
                     'items' => $items,
-                    'subtotal' => $subtotal,
-                    'pajak' => $pajak,
                     'total' => $total,
                 ]);
 
-                // Simpan PDF ke storage temp
                 $fileName = 'laporan-pembelian-' . $transaksi->id . '.pdf';
                 $pdfPath = storage_path('app/temp/' . $fileName);
                 
-                // Buat direktori temp jika belum ada
                 if (!file_exists(storage_path('app/temp'))) {
                     mkdir(storage_path('app/temp'), 0755, true);
                 }
                 
                 $pdf->save($pdfPath);
-                
-                Log::info('PDF generated successfully', [
-                    'transaksi_id' => $transaksi->id,
-                    'pdf_path' => $pdfPath
-                ]);
             } catch (\Exception $pdfError) {
-                Log::error('Failed to generate PDF', [
-                    'transaksi_id' => $transaksi->id,
-                    'error' => $pdfError->getMessage()
-                ]);
+                \Log::error('Failed to generate PDF: ' . $pdfError->getMessage());
             }
 
-            // Kosongkan keranjang setelah checkout berhasil
-            Keranjang::where('user_id', $user_id)->delete();
-
-            // Kirim email menggunakan LaporanMail
+            // Kirim email
             try {
                 Mail::to($user->email)->send(new LaporanMail($pdfPath, $transaksi));
-                
-                Log::info('Checkout email sent successfully using LaporanMail', [
-                    'user_id' => $user_id,
-                    'transaksi_id' => $transaksi->id,
-                    'email' => $user->email,
-                    'pdf_attached' => $pdfPath ? 'yes' : 'no',
-                    'tracking_number' => $shippingOrder->tracking_number
-                ]);
-                
                 $emailStatus = 'Email laporan pembelian telah dikirim ke ' . $user->email;
                 
-                // Hapus file PDF setelah email terkirim
                 if ($pdfPath && file_exists($pdfPath)) {
                     unlink($pdfPath);
                 }
-                
             } catch (\Exception $emailError) {
-                Log::error('Failed to send checkout email', [
-                    'user_id' => $user_id,
-                    'transaksi_id' => $transaksi->id,
-                    'error' => $emailError->getMessage()
-                ]);
+                \Log::error('Failed to send email: ' . $emailError->getMessage());
                 $emailStatus = 'Email laporan gagal dikirim, namun pesanan telah diproses.';
                 
-                // Hapus file PDF jika email gagal
                 if ($pdfPath && file_exists($pdfPath)) {
                     unlink($pdfPath);
                 }
             }
+
+            // Kosongkan keranjang
+            Keranjang::where('user_id', $user_id)->delete();
 
             DB::commit();
 
@@ -322,14 +365,9 @@ class CustomerController extends Controller
                 return redirect()->route('customer.order.history')->with('success', $successMessage);
             }
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             DB::rollback();
-            Log::error('Checkout error: ' . $e->getMessage(), [
-                'user_id' => Auth::id(),
-                'request_data' => $request->all()
-            ]);
+            \Log::error('Checkout error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal memproses pesanan. Silakan coba lagi.');
         }
     }
@@ -340,7 +378,7 @@ class CustomerController extends Controller
     public function orderHistory()
     {
         $transaksis = Transaksi::where('user_id', Auth::id())
-            ->with('shippingOrder') // Load shipping order untuk tracking
+            ->with('shippingOrder')
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -390,7 +428,7 @@ class CustomerController extends Controller
                 (object) [
                     'nama' => 'Produk dari Transaksi #' . $transaksi->id,
                     'jumlah' => 1,
-                    'harga' => $transaksi->total / 1.1, // Sebelum pajak
+                    'harga' => $transaksi->total / 1.1,
                     'item_type' => 'kategori',
                     'kategori_id' => 1,
                     'produk' => null,

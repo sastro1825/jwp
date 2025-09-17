@@ -21,8 +21,9 @@ class Transaksi extends Model
 
     protected $casts = [
         'total' => 'float',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        // Perbaikan cast tanggal dengan timezone
+        'created_at' => 'datetime:Y-m-d H:i:s',
+        'updated_at' => 'datetime:Y-m-d H:i:s',
     ];
 
     /**
@@ -111,5 +112,13 @@ class Transaksi extends Model
     public function getTotalFromDetails()
     {
         return $this->detailTransaksi()->sum('subtotal_item');
+    }
+
+    /**
+     * Get formatted created date untuk Indonesia
+     */
+    public function getFormattedCreatedAtAttribute()
+    {
+        return $this->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') . ' WIB';
     }
 }

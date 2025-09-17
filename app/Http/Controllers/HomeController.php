@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 class HomeController extends Controller
 {
     /**
-     * Tampilkan halaman home - DENGAN DEBUG GAMBAR
+     * Tampilkan halaman home - DENGAN PERBAIKAN PATH GAMBAR
      */
     public function index()
     {
@@ -32,24 +32,24 @@ class HomeController extends Controller
         // Ambil kategori admin untuk guest
         $kategoris = Kategori::all();
         
-        // Ambil kategori dari toko dengan debug gambar
+        // Ambil kategori dari toko dengan perbaikan path gambar
         $kategoriToko = \App\Models\TokoKategori::with('toko')
             ->whereHas('toko', function($query) {
                 $query->where('status', 'approved');
             })
             ->get();
 
-        // Debug: Log path gambar untuk troubleshooting
+        // Debug path gambar untuk troubleshooting - PERBAIKAN PATH GAMBAR
         foreach($kategoriToko as $kategori) {
-            \Log::info('Kategori Toko Debug', [
+            \Log::info('Debug Kategori Toko Gambar', [
+                'id' => $kategori->id,
                 'nama' => $kategori->nama,
-                'gambar' => $kategori->gambar,
-                'full_path' => $kategori->gambar ? asset('storage/' . $kategori->gambar) : null,
-                'file_exists' => $kategori->gambar ? file_exists(public_path('storage/' . $kategori->gambar)) : false
+                'gambar_path' => $kategori->gambar,
+                'full_url' => $kategori->gambar ? asset('storage/' . $kategori->gambar) : null,
+                'file_exists' => $kategori->gambar ? \Storage::disk('public')->exists($kategori->gambar) : false
             ]);
         }
 
-        // Jika belum login, tampilkan halaman guest dengan kategori toko
         return view('halaman-produk-guest', compact('kategoris', 'kategoriToko'));
     }
 

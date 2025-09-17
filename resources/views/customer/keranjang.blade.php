@@ -68,7 +68,7 @@
                                         <div class="me-3">
                                             @if($item->kategori && $item->kategori->gambar)
                                                 <img src="{{ asset('storage/' . $item->kategori->gambar) }}" 
-                                                     alt="{{ $item->nama_produk }}" 
+                                                     alt="{{ $item->nama_item }}" 
                                                      class="rounded"
                                                      style="width: 60px; height: 60px; object-fit: cover;">
                                             @else
@@ -79,7 +79,7 @@
                                             @endif
                                         </div>
                                         <div>
-                                            <h6 class="mb-1">{{ $item->nama_produk }}</h6>
+                                            <h6 class="mb-1">{{ $item->nama_item }}</h6>
                                             <small class="text-muted">Ditambahkan: {{ $item->created_at->format('d/m/Y H:i') }}</small>
                                         </div>
                                     </div>
@@ -93,7 +93,7 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    <strong>Rp {{ number_format($item->harga, 0, ',', '.') }}</strong>
+                                    <strong>Rp {{ number_format((float)$item->harga_item, 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="text-center">
                                     {{-- Form Update Jumlah --}}
@@ -120,7 +120,7 @@
                                 </td>
                                 <td class="text-center">
                                     <strong class="text-success">
-                                        Rp {{ number_format($item->harga * $item->jumlah, 0, ',', '.') }}
+                                        Rp {{ number_format((float)$item->harga_item * (int)$item->jumlah, 0, ',', '.') }}
                                     </strong>
                                 </td>
                                 <td class="text-center">
@@ -134,7 +134,7 @@
                                         @method('DELETE')
                                         <button type="submit" 
                                                 class="btn btn-danger btn-sm" 
-                                                onclick="return confirm('Yakin hapus {{ $item->nama_produk }} dari keranjang?')"
+                                                onclick="return confirm('Yakin hapus {{ $item->nama_item }} dari keranjang?')"
                                                 title="Hapus dari keranjang">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -178,7 +178,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Subtotal ({{ $keranjangItems->sum('jumlah') }} item):</span>
-                            <span>Rp {{ number_format($totalHarga, 0, ',', '.') }}</span>
+                            <span>Rp {{ number_format((float)$totalHarga, 0, ',', '.') }}</span>
                         </div>
                         <div class="d-flex justify-content-between mb-2">
                             <span>Ongkos Kirim:</span>
@@ -187,7 +187,7 @@
                         <hr>
                         <div class="d-flex justify-content-between mb-3">
                             <strong>Total:</strong>
-                            <strong class="text-primary">Rp {{ number_format($totalHarga, 0, ',', '.') }}</strong>
+                            <strong class="text-primary">Rp {{ number_format((float)$totalHarga, 0, ',', '.') }}</strong>
                         </div>
                         
                         {{-- Tombol Checkout --}}
@@ -203,6 +203,17 @@
                 </div>
             </div>
         </div>
+
+        {{-- Debug info untuk development --}}
+        @if(config('app.debug'))
+            <div class="alert alert-info mt-3">
+                <strong>Debug COD Info:</strong><br>
+                User City: {{ auth()->user()->city ?? 'Tidak ada' }}<br>
+                Admin City: {{ \App\Models\User::where('role', 'admin')->first()->city ?? 'Tidak ada' }}<br>
+                Can Use COD: {{ ($canUseCOD ?? false) ? 'Ya' : 'Tidak' }}<br>
+                Toko Items: {{ $keranjangItems->where('item_type', 'toko_kategori')->count() }}
+            </div>
+        @endif
     @else
         {{-- Keranjang Kosong --}}
         <div class="card">
@@ -272,8 +283,17 @@
                                 <select id="metode_pembayaran" name="metode_pembayaran" class="form-select" required>
                                     <option value="">Pilih Metode Pembayaran</option>
                                     <option value="prepaid">Prepaid (Bayar Dimuka)</option>
-                                    <option value="postpaid">Postpaid (Bayar Belakangan)</option>
+                                    @if($canUseCOD ?? false)
+                                        <option value="postpaid">COD (Cash On Delivery)</option>
+                                    @endif
                                 </select>
+                                
+                                @if(!($canUseCOD ?? false))
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> 
+                                        COD tidak tersedia karena ada toko yang berbeda kota dengan Anda
+                                    </small>
+                                @endif
                             </div>
                             
                             <div class="mb-3">
@@ -294,11 +314,11 @@
                                     @foreach($keranjangItems as $item)
                                         <div class="d-flex justify-content-between mb-2">
                                             <div>
-                                                <strong>{{ $item->nama_produk }}</strong><br>
-                                                <small class="text-muted">{{ $item->jumlah }}x @ Rp {{ number_format($item->harga, 0, ',', '.') }}</small>
+                                                <strong>{{ $item->nama_item }}</strong><br>
+                                                <small class="text-muted">{{ $item->jumlah }}x @ Rp {{ number_format((float)$item->harga_item, 0, ',', '.') }}</small>
                                             </div>
                                             <div class="text-end">
-                                                <strong>Rp {{ number_format($item->harga * $item->jumlah, 0, ',', '.') }}</strong>
+                                                <strong>Rp {{ number_format((float)$item->harga_item * (int)$item->jumlah, 0, ',', '.') }}</strong>
                                             </div>
                                         </div>
                                         @if(!$loop->last)<hr class="my-2">@endif
@@ -311,7 +331,7 @@
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         <strong>Total Pembayaran:</strong>
-                                        <strong class="text-primary">Rp {{ number_format($totalHarga, 0, ',', '.') }}</strong>
+                                        <strong class="text-primary">Rp {{ number_format((float)$totalHarga, 0, ',', '.') }}</strong>
                                     </div>
                                 </div>
                             </div>
@@ -382,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 
-    // Validation untuk checkout form
+    // Validation untuk checkout form dengan COD check
     const checkoutForm = document.querySelector('#checkoutModal form');
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', function(e) {
@@ -394,12 +414,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Mohon lengkapi alamat pengiriman dan metode pembayaran.');
                 return false;
             }
+
+            // Check jika pilih COD tapi tidak tersedia
+            @if(!($canUseCOD ?? false))
+                if (metode === 'postpaid') {
+                    e.preventDefault();
+                    alert('COD tidak tersedia karena Anda tidak se-kota dengan admin/toko. Silakan pilih prepaid.');
+                    return false;
+                }
+            @endif
             
             // Add loading state to submit button
             const submitBtn = this.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Memproses...';
         });
+        
+        // Real-time validation untuk metode pembayaran
+        const metodeSelect = document.getElementById('metode_pembayaran');
+        if (metodeSelect) {
+            metodeSelect.addEventListener('change', function() {
+                @if(!($canUseCOD ?? false))
+                    if (this.value === 'postpaid') {
+                        this.value = '';
+                        alert('COD tidak tersedia karena Anda tidak se-kota dengan admin/toko.');
+                    }
+                @endif
+            });
+        }
     }
 });
 </script>

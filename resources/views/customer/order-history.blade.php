@@ -59,7 +59,8 @@
                                             <span class="badge bg-secondary ms-2">{{ ucfirst($transaksi->status) }}</span>
                                         @endif
                                     </h6>
-                                    <small class="text-muted">{{ $transaksi->created_at->format('d F Y, H:i') }}</small>
+                                    {{-- Format tanggal dengan timezone Indonesia --}}
+                                    <small class="text-muted">{{ $transaksi->created_at->setTimezone('Asia/Jakarta')->format('d F Y, H:i') }} WIB</small>
                                 </div>
                                 <div class="col-md-6 text-end">
                                     <strong class="text-primary">Rp {{ number_format($transaksi->total, 0, ',', '.') }}</strong>

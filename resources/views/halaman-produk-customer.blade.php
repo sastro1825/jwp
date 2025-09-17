@@ -191,7 +191,7 @@
                     </div>
                 </div>
                 
-                {{-- Kategori dari Toko-toko (Database Terpisah) --}}
+                {{-- Kategori dari Toko-toko untuk Customer - PERBAIKAN TAMPILAN GAMBAR --}}
                 @if(isset($kategoriToko) && $kategoriToko->count() > 0)
                     <div class="mb-4 mt-5">
                         <h4>Kategori dari Toko Mitra</h4>
@@ -199,23 +199,38 @@
                             @foreach($kategoriToko as $kategori)
                             <div class="col-md-4 col-lg-3 mb-3">
                                 <div class="card h-100 kategori-card shadow-sm border-success">
-                                    {{-- Gambar Kategori Toko - PERBAIKI PATH GAMBAR --}}
+                                    {{-- Gambar Kategori Toko - PERBAIKAN PATH DAN ERROR HANDLING --}}
                                     <div class="position-relative">
                                         @if($kategori->gambar)
-                                            <img src="{{ asset('storage/' . $kategori->gambar) }}" 
-                                                 alt="{{ $kategori->nama }}" 
-                                                 class="card-img-top"
-                                                 style="height: 200px; object-fit: cover;"
-                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                            {{-- Fallback untuk gambar error --}}
-                                            <div class="card-img-top bg-light align-items-center justify-content-center" 
-                                                 style="height: 200px; display: none;">
-                                                <i class="bi bi-shop text-success" style="font-size: 3rem;"></i>
-                                            </div>
+                                            {{-- Cek apakah file gambar ada --}}
+                                            @php
+                                                $imagePath = public_path('storage/' . $kategori->gambar);
+                                                $imageExists = file_exists($imagePath);
+                                            @endphp
+                                            
+                                            @if($imageExists)
+                                                <img src="{{ asset('storage/' . $kategori->gambar) }}" 
+                                                     alt="{{ $kategori->nama }}" 
+                                                     class="card-img-top"
+                                                     style="height: 200px; object-fit: cover;">
+                                            @else
+                                                {{-- Fallback jika file tidak ada --}}
+                                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                                     style="height: 200px;">
+                                                    <div class="text-center">
+                                                        <i class="bi bi-shop text-success" style="font-size: 3rem;"></i>
+                                                        <br><small class="text-muted">Gambar Tidak Ditemukan</small>
+                                                    </div>
+                                                </div>
+                                            @endif
                                         @else
+                                            {{-- Placeholder default jika tidak ada gambar --}}
                                             <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
                                                  style="height: 200px;">
-                                                <i class="bi bi-shop text-success" style="font-size: 3rem;"></i>
+                                                <div class="text-center">
+                                                    <i class="bi bi-shop text-success" style="font-size: 3rem;"></i>
+                                                    <br><small class="text-muted">Belum Ada Gambar</small>
+                                                </div>
                                             </div>
                                         @endif
                                         
@@ -230,30 +245,27 @@
                                         </div>
                                     </div>
                                     
+                                    {{-- Card body content --}}
                                     <div class="card-body d-flex flex-column">
-                                        {{-- Nama Kategori --}}
                                         <h6 class="card-title text-center">{{ $kategori->nama }}</h6>
                                         
-                                        {{-- Harga --}}
                                         <div class="text-center mb-3">
                                             <span class="badge bg-success fs-6">
                                                 Rp {{ number_format($kategori->harga, 0, ',', '.') }}
                                             </span>
                                         </div>
                                         
-                                        {{-- Deskripsi singkat --}}
                                         @if($kategori->deskripsi)
                                             <p class="card-text text-muted small text-center">
                                                 {{ Str::limit($kategori->deskripsi, 50) }}
                                             </p>
                                         @endif
                                         
-                                        {{-- Info Toko --}}
                                         <small class="text-center text-muted mb-2">
                                             Oleh: {{ $kategori->toko->nama ?? 'Toko Tidak Diketahui' }}
                                         </small>
                                         
-                                        {{-- Tombol View dan Buy untuk kategori toko - DIPERBAIKI --}}
+                                        {{-- Tombol View dan Buy untuk kategori toko --}}
                                         <div class="mt-auto">
                                             <div class="d-grid gap-2">
                                                 <button class="btn btn-outline-success btn-sm" 
@@ -261,7 +273,7 @@
                                                     <i class="bi bi-eye"></i> View Toko
                                                 </button>
                                                 
-                                                {{-- Tombol Buy kategori toko - DIPERBAIKI BISA DIBELI --}}
+                                                {{-- Tombol Buy kategori toko dengan route sesuai role --}}
                                                 @if(auth()->user()->role === 'pemilik_toko')
                                                     <form action="{{ route('pemilik-toko.buy.from.toko.kategori', $kategori->id) }}" method="POST" class="buy-form">
                                                         @csrf
@@ -284,6 +296,11 @@
                             </div>
                             @endforeach
                         </div>
+                    </div>
+                @else
+                    {{-- Debug message jika tidak ada kategori toko --}}
+                    <div class="alert alert-info">
+                        <strong>Debug:</strong> Tidak ada kategori toko mitra yang tersedia atau belum ada toko yang approved.
                     </div>
                 @endif
             @else
