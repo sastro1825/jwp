@@ -37,27 +37,54 @@
         </div>
     @endif
 
-    {{-- Cek status permohonan existing --}}
+    {{-- Cek status permohonan dengan perbaikan logic --}}
     @if($existingRequest)
+        {{-- Jika ada permohonan pending --}}
         <div class="alert alert-warning">
             <h5><i class="bi bi-hourglass-split"></i> Permohonan Sedang Diproses</h5>
             <p class="mb-0">Anda sudah memiliki permohonan toko yang sedang dalam review admin. Silakan tunggu konfirmasi dari admin.</p>
             <a href="{{ route('customer.toko.status') }}" class="btn btn-primary btn-sm mt-2">Lihat Status Permohonan</a>
         </div>
     @elseif($approvedRequest)
+        {{-- Jika ada permohonan yang sudah approved --}}
         <div class="alert alert-success">
             <h5><i class="bi bi-check-circle"></i> Toko Sudah Disetujui</h5>
             <p class="mb-0">Selamat! Toko Anda sudah disetujui. Anda sekarang memiliki akses admin toko.</p>
             <a href="{{ route('customer.toko.status') }}" class="btn btn-success btn-sm mt-2">Kelola Toko</a>
         </div>
     @else
+        {{-- Cek apakah ada permohonan yang ditolak untuk notifikasi --}}
+        @php
+            $rejectedRequest = \App\Models\TokoRequest::where('user_id', auth()->id())
+                ->where('status', 'rejected')
+                ->latest()
+                ->first();
+        @endphp
+        
+        @if($rejectedRequest)
+            {{-- Notifikasi permohonan ditolak --}}
+            <div class="alert alert-danger">
+                <h5><i class="bi bi-x-circle"></i> Permohonan Sebelumnya Ditolak</h5>
+                <p class="mb-2">Permohonan toko "<strong>{{ $rejectedRequest->nama_toko }}</strong>" telah ditolak oleh admin.</p>
+                @if($rejectedRequest->catatan_admin)
+                    <p class="mb-2"><strong>Alasan:</strong> {{ $rejectedRequest->catatan_admin }}</p>
+                @endif
+                <p class="mb-0">Anda dapat mengajukan permohonan baru dengan memperbaiki hal-hal yang menjadi alasan penolakan.</p>
+            </div>
+        @endif
+
         {{-- Form Permohonan Toko --}}
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="bi bi-shop"></i> Form Permohonan Toko Baru
+                            <i class="bi bi-shop"></i> 
+                            @if($rejectedRequest)
+                                Form Permohonan Toko Baru (Setelah Penolakan)
+                            @else
+                                Form Permohonan Toko Baru
+                            @endif
                         </h5>
                     </div>
                     <div class="card-body">

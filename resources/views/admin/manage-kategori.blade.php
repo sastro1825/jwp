@@ -3,6 +3,13 @@
 @section('content')
 {{-- Halaman Kelola Kategori dengan Dropdown Category Type --}}
 <div class="container">
+    {{-- Tombol kembali ke dashboard dipindah ke atas --}}
+    <div class="mb-3">
+        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+        </a>
+    </div>
+
     <div class="row">
         <div class="col-12">
             <h1>Kelola Kategori</h1>
@@ -262,13 +269,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    {{-- Tombol Kembali ke Dashboard --}}
-    <div class="mt-3">
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
-        </a>
     </div>
 </div>
 @endsection

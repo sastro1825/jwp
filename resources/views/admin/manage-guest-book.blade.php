@@ -2,6 +2,13 @@
 
 @section('content')
 <div class="container">
+    {{-- Tombol kembali ke dashboard dipindah ke atas --}}
+    <div class="mb-3">
+        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+        </a>
+    </div>
+
     <div class="row">
         <div class="col-12">
             <h1 class="mb-4">Kelola Guest Book & Feedback</h1>
@@ -244,13 +251,6 @@
                 </div>
             @endif
         </div>
-    </div>
-
-    {{-- Tombol Kembali --}}
-    <div class="mt-4">
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
-        </a>
     </div>
 </div>
 @endsection

@@ -3,6 +3,13 @@
 @section('content')
 {{-- Halaman Kelola Permohonan Toko --}}
 <div class="container">
+    {{-- Tombol kembali ke dashboard dipindah ke atas --}}
+    <div class="mb-3">
+        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
+        </a>
+    </div>
+
     <div class="row">
         <div class="col-12">
             <h1>Kelola Permohonan Toko</h1>
@@ -69,7 +76,7 @@
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0">
-                <i class="bi bi-shop"></i> Daftar Permohonan Toko Pending
+                <i class="bi bi-shop"></i> Daftar Permohonan Toko
             </h5>
         </div>
         <div class="card-body">
@@ -82,6 +89,7 @@
                                 <th>Customer</th>
                                 <th>Nama Toko</th>
                                 <th>Kategori Usaha</th>
+                                <th>Status</th>
                                 <th>Tanggal Ajuan</th>
                                 <th>Aksi</th>
                             </tr>
@@ -103,33 +111,37 @@
                                         {{ ucwords(str_replace('-', ' ', $request->kategori_usaha)) }}
                                     </span>
                                 </td>
+                                <td>
+                                    @if($request->status === 'pending')
+                                        <span class="badge bg-warning">Pending</span>
+                                    @elseif($request->status === 'approved')
+                                        <span class="badge bg-success">Approved</span>
+                                    @else
+                                        <span class="badge bg-danger">Rejected</span>
+                                    @endif
+                                </td>
                                 <td>{{ $request->created_at->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    {{-- Tombol View Detail --}}
                                     <button type="button" class="btn btn-sm btn-info me-1" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#detailModal{{ $request->id }}"
                                             title="Lihat Detail">
                                         <i class="bi bi-eye"></i>
                                     </button>
-
-                                    {{-- Tombol Approve --}}
-                                    <button type="button" class="btn btn-sm btn-success me-1" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#approveModal{{ $request->id }}"
-                                            title="Setujui Permohonan">
-                                        <i class="bi bi-check-circle"></i>
-                                    </button>
-
-                                    {{-- Tombol Reject --}}
-                                    <button type="button" class="btn btn-sm btn-danger" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#rejectModal{{ $request->id }}"
-                                            title="Tolak Permohonan">
-                                        <i class="bi bi-x-circle"></i>
-                                    </button>
-
-                                    {{-- Modal Detail Permohonan --}}
+                                    @if($request->status === 'pending')
+                                        <button type="button" class="btn btn-sm btn-success me-1" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#approveModal{{ $request->id }}"
+                                                title="Setujui Permohonan">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#rejectModal{{ $request->id }}"
+                                                title="Tolak Permohonan">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    @endif
                                     <div class="modal fade" id="detailModal{{ $request->id }}" tabindex="-1">
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content">
@@ -139,7 +151,6 @@
                                                 </div>
                                                 <div class="modal-body">
                                                     <div class="row">
-                                                        {{-- Info Customer --}}
                                                         <div class="col-md-6">
                                                             <h6>Informasi Customer</h6>
                                                             <table class="table table-sm table-borderless">
@@ -150,8 +161,6 @@
                                                                 <tr><td><strong>No. HP:</strong></td><td>{{ $request->user->contact_no ?? '-' }}</td></tr>
                                                             </table>
                                                         </div>
-
-                                                        {{-- Info Toko --}}
                                                         <div class="col-md-6">
                                                             <h6>Informasi Toko</h6>
                                                             <table class="table table-sm table-borderless">
@@ -162,10 +171,7 @@
                                                             </table>
                                                         </div>
                                                     </div>
-
                                                     <hr>
-
-                                                    {{-- Alamat Toko --}}
                                                     <div class="row">
                                                         <div class="col-12">
                                                             <h6>Alamat Toko</h6>
@@ -174,10 +180,7 @@
                                                             </div>
                                                         </div>
                                                     </div>
-
                                                     <hr>
-
-                                                    {{-- Deskripsi Toko --}}
                                                     @if($request->deskripsi_toko)
                                                     <div class="row">
                                                         <div class="col-12">
@@ -189,8 +192,6 @@
                                                     </div>
                                                     <hr>
                                                     @endif
-
-                                                    {{-- Alasan Permohonan --}}
                                                     <div class="row">
                                                         <div class="col-12">
                                                             <h6>Alasan Permohonan</h6>
@@ -202,127 +203,113 @@
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                                                    <button type="button" class="btn btn-success" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#approveModal{{ $request->id }}">
-                                                        <i class="bi bi-check-circle"></i> Approve
-                                                    </button>
-                                                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#rejectModal{{ $request->id }}">
-                                                        <i class="bi bi-x-circle"></i> Reject
-                                                    </button>
+                                                    @if($request->status === 'pending')
+                                                        <button type="button" class="btn btn-success" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#approveModal{{ $request->id }}">
+                                                            <i class="bi bi-check-circle"></i> Approve
+                                                        </button>
+                                                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#rejectModal{{ $request->id }}">
+                                                            <i class="bi bi-x-circle"></i> Reject
+                                                        </button>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-
-                                    {{-- Modal Approve --}}
-                                    <div class="modal fade" id="approveModal{{ $request->id }}" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Setujui Permohonan Toko</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    @if($request->status === 'pending')
+                                        <div class="modal fade" id="approveModal{{ $request->id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Setujui Permohonan Toko</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form action="{{ route('admin.toko.approve', $request->id) }}" method="POST">
+                                                        @csrf
+                                                        <div class="modal-body">
+                                                            <div class="alert alert-success">
+                                                                <strong>Toko yang akan disetujui:</strong> {{ $request->nama_toko }}<br>
+                                                                <strong>Pemilik:</strong> {{ $request->user->name }}
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="catatan_admin{{ $request->id }}" class="form-label">Catatan Admin (Opsional)</label>
+                                                                <textarea id="catatan_admin{{ $request->id }}" 
+                                                                          name="catatan_admin" 
+                                                                          class="form-control" 
+                                                                          rows="3" 
+                                                                          placeholder="Berikan catatan untuk customer...">Selamat! Permohonan toko Anda telah disetujui. Silakan mulai mengelola toko Anda.</textarea>
+                                                            </div>
+                                                            <div class="alert alert-info">
+                                                                <i class="bi bi-info-circle"></i>
+                                                                <strong>Yang akan terjadi:</strong>
+                                                                <ul class="mb-0 mt-2">
+                                                                    <li>Customer akan mendapat akses admin toko</li>
+                                                                    <li>Toko akan masuk ke database sistem</li>
+                                                                    <li>Customer dapat mulai mengelola produk</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                            <button type="submit" class="btn btn-success">Ya, Setujui Toko</button>
+                                                        </div>
+                                                    </form>
                                                 </div>
-                                                <form action="{{ route('admin.toko.approve', $request->id) }}" method="POST">
-                                                    @csrf
-                                                    <div class="modal-body">
-                                                        <div class="alert alert-success">
-                                                            <strong>Toko yang akan disetujui:</strong> {{ $request->nama_toko }}<br>
-                                                            <strong>Pemilik:</strong> {{ $request->user->name }}
-                                                        </div>
-                                                        
-                                                        <div class="mb-3">
-                                                            <label for="catatan_admin{{ $request->id }}" class="form-label">Catatan Admin (Opsional)</label>
-                                                            <textarea id="catatan_admin{{ $request->id }}" 
-                                                                      name="catatan_admin" 
-                                                                      class="form-control" 
-                                                                      rows="3" 
-                                                                      placeholder="Berikan catatan untuk customer...">Selamat! Permohonan toko Anda telah disetujui. Silakan mulai mengelola toko Anda.</textarea>
-                                                        </div>
-
-                                                        <div class="alert alert-info">
-                                                            <i class="bi bi-info-circle"></i>
-                                                            <strong>Yang akan terjadi:</strong>
-                                                            <ul class="mb-0 mt-2">
-                                                                <li>Customer akan mendapat akses admin toko</li>
-                                                                <li>Toko akan masuk ke database sistem</li>
-                                                                <li>Customer dapat mulai mengelola produk</li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                        <button type="submit" class="btn btn-success">Ya, Setujui Toko</button>
-                                                    </div>
-                                                </form>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    {{-- Modal Reject --}}
-                                    <div class="modal fade" id="rejectModal{{ $request->id }}" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Tolak Permohonan Toko</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        <div class="modal fade" id="rejectModal{{ $request->id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Tolak Permohonan Toko</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <form action="{{ route('admin.toko.reject', $request->id) }}" method="POST">
+                                                        @csrf
+                                                        <div class="modal-body">
+                                                            <div class="alert alert-warning">
+                                                                <strong>Toko yang akan ditolak:</strong> {{ $request->nama_toko }}<br>
+                                                                <strong>Pemilik:</strong> {{ $request->user->name }}
+                                                            </div>
+                                                            <div class="mb-3">
+                                                                <label for="catatan_reject{{ $request->id }}" class="form-label">Alasan Penolakan <span class="text-danger">*</span></label>
+                                                                <textarea id="catatan_reject{{ $request->id }}" 
+                                                                          name="catatan_admin" 
+                                                                          class="form-control" 
+                                                                          rows="4" 
+                                                                          required
+                                                                          placeholder="Jelaskan alasan penolakan permohonan..."></textarea>
+                                                            </div>
+                                                            <div class="alert alert-danger">
+                                                                <i class="bi bi-exclamation-triangle"></i>
+                                                                Customer akan menerima notifikasi penolakan beserta alasan yang Anda berikan.
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                            <button type="submit" class="btn btn-danger">Ya, Tolak Permohonan</button>
+                                                        </div>
+                                                    </form>
                                                 </div>
-                                                <form action="{{ route('admin.toko.reject', $request->id) }}" method="POST">
-                                                    @csrf
-                                                    <div class="modal-body">
-                                                        <div class="alert alert-warning">
-                                                            <strong>Toko yang akan ditolak:</strong> {{ $request->nama_toko }}<br>
-                                                            <strong>Pemilik:</strong> {{ $request->user->name }}
-                                                        </div>
-                                                        
-                                                        <div class="mb-3">
-                                                            <label for="catatan_reject{{ $request->id }}" class="form-label">Alasan Penolakan <span class="text-danger">*</span></label>
-                                                            <textarea id="catatan_reject{{ $request->id }}" 
-                                                                      name="catatan_admin" 
-                                                                      class="form-control" 
-                                                                      rows="4" 
-                                                                      required
-                                                                      placeholder="Jelaskan alasan penolakan permohonan..."></textarea>
-                                                        </div>
-
-                                                        <div class="alert alert-danger">
-                                                            <i class="bi bi-exclamation-triangle"></i>
-                                                            Customer akan menerima notifikasi penolakan beserta alasan yang Anda berikan.
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                                        <button type="submit" class="btn btn-danger">Ya, Tolak Permohonan</button>
-                                                    </div>
-                                                </form>
                                             </div>
                                         </div>
-                                    </div>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
-
-                {{-- Pagination Links --}}
                 <div class="mt-3">
                     {{ $tokoRequests->links() }}
                 </div>
             @else
-                {{-- Tampilan jika tidak ada permohonan pending --}}
                 <div class="text-center py-4">
                     <i class="bi bi-shop" style="font-size: 4rem; color: #ccc;"></i>
-                    <h4 class="mt-3">Tidak Ada Permohonan Pending</h4>
+                    <h4 class="mt-3">Tidak Ada Permohonan</h4>
                     <p class="text-muted">Saat ini tidak ada permohonan toko yang menunggu review.</p>
                 </div>
             @endif
         </div>
-    </div>
-
-    {{-- Tombol Kembali ke Dashboard --}}
-    <div class="mt-3">
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
-        </a>
     </div>
 </div>
 @endsection

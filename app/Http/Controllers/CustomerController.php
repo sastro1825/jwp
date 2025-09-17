@@ -515,29 +515,34 @@ class CustomerController extends Controller
     }
 
     /**
-     * Tampilkan form permohonan toko - DIPERBAIKI
+     * Tampilkan form permohonan toko - DIPERBAIKI untuk handle rejection
      */
     public function showTokoRequestForm()
     {
-        // Cek apakah user sudah punya permohonan pending atau approved
+        // Cek apakah user sudah punya permohonan pending
         $existingRequest = TokoRequest::where('user_id', auth()->id())
             ->where('status', 'pending')
             ->first();
 
+        // Cek apakah user sudah punya permohonan approved
         $approvedRequest = TokoRequest::where('user_id', auth()->id())
             ->where('status', 'approved')
             ->first();
 
-        // Pass variabel ke view
-        return view('customer.toko-request-form', compact('existingRequest', 'approvedRequest'));
+        // Ambil data user yang sedang login
+        $user = auth()->user();
+
+        // Pass semua variabel yang dibutuhkan ke view
+        return view('customer.toko-request-form', compact('existingRequest', 'approvedRequest', 'user'));
     }
 
     /**
-     * Submit permohonan toko
+     * Submit permohonan toko - DIPERBAIKI untuk allow resubmit after rejection
      */
     public function submitTokoRequest(Request $request)
     {
         try {
+            // Hanya cek pending dan approved, bukan rejected
             $existingRequest = TokoRequest::where('user_id', auth()->id())
                 ->whereIn('status', ['pending', 'approved'])
                 ->first();
@@ -547,6 +552,7 @@ class CustomerController extends Controller
                     'Anda sudah memiliki permohonan toko yang ' . $existingRequest->status);
             }
 
+            // Validasi form tetap sama
             $validated = $request->validate([
                 'nama_toko' => 'required|string|max:100',
                 'deskripsi_toko' => 'nullable|string|max:1000',
@@ -554,11 +560,6 @@ class CustomerController extends Controller
                 'alamat_toko' => 'required|string|max:500',
                 'no_telepon' => 'nullable|string|max:20',
                 'alasan_permohonan' => 'required|string|max:1000',
-            ], [
-                'nama_toko.required' => 'Nama toko wajib diisi.',
-                'kategori_usaha.required' => 'Kategori usaha wajib dipilih.',
-                'alamat_toko.required' => 'Alamat toko wajib diisi.',
-                'alasan_permohonan.required' => 'Alasan permohonan wajib diisi.',
             ]);
 
             $validated['user_id'] = auth()->id();
@@ -568,8 +569,6 @@ class CustomerController extends Controller
             return redirect()->route('customer.toko.status')->with('success', 
                 'Permohonan toko berhasil dikirim. Silakan tunggu review dari admin.');
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             Log::error('Error submitting toko request: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal mengirim permohonan toko. Silakan coba lagi.');
