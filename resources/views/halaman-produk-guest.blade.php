@@ -64,10 +64,10 @@
                                     {{-- Nama Kategori --}}
                                     <h6 class="card-title text-center">{{ $kategori->nama }}</h6>
                                     
-                                    {{-- Harga Patokan --}}
+                                    {{-- Harga Patokan - DIPERBAIKI --}}
                                     <div class="text-center mb-3">
                                         <span class="badge bg-success fs-6">
-                                            Mulai Rp {{ number_format($kategori->harga, 0, ',', '.') }}
+                                            Rp {{ number_format($kategori->harga, 0, ',', '.') }}
                                         </span>
                                     </div>
                                     
@@ -110,13 +110,11 @@
                             <div class="card h-100 kategori-card shadow-sm border-success">
                                 <div class="position-relative">
                                     @if($kategori->gambar && file_exists(storage_path('app/public/' . $kategori->gambar)))
-                                        {{-- LANGSUNG TAMPILKAN GAMBAR TANPA LOADING --}}
                                         <img src="{{ asset('storage/' . $kategori->gambar) }}" 
                                              alt="{{ $kategori->nama }}" 
                                              class="card-img-top"
                                              style="height: 200px; object-fit: cover; width: 100%;">
                                     @else
-                                        {{-- Placeholder jika tidak ada gambar --}}
                                         <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
                                              style="height: 200px;">
                                             <div class="text-center">
@@ -137,7 +135,6 @@
                                     </div>
                                 </div>
                                 
-                                {{-- Card body content --}}
                                 <div class="card-body d-flex flex-column">
                                     <h6 class="card-title text-center">{{ $kategori->nama }}</h6>
                                     
@@ -157,7 +154,6 @@
                                         Oleh: {{ $kategori->toko->nama ?? 'Toko Tidak Diketahui' }}
                                     </small>
                                     
-                                    {{-- Tombol View dan Buy untuk guest --}}
                                     <div class="mt-auto">
                                         <div class="d-grid gap-2">
                                             <button class="btn btn-outline-success btn-sm" 
@@ -187,7 +183,7 @@
             @endif
         </div>
 
-        {{-- Sidebar Kategori (Kolom Kanan) --}}
+        {{-- Sidebar Kategori (Kolom Kanan) - DIPERBAIKI --}}
         <div class="col-md-3">
             <div class="card product-category-card">
                 <div class="card-header">
@@ -217,22 +213,6 @@
                                 </div>
                             @endforeach
                         @endforeach
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-body text-center">
-                    <i class="bi bi-person-plus" style="font-size: 3rem; color: #007bff;"></i>
-                    <h6 class="mt-2">Bergabung dengan OSS</h6>
-                    <p class="small text-muted">Daftar sekarang untuk melihat produk dan berbelanja!</p>
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('register') }}" class="btn btn-primary btn-sm">
-                            <i class="bi bi-person-plus-fill"></i> Daftar Gratis
-                        </a>
-                        <a href="{{ route('login') }}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-box-arrow-in-right"></i> Login
-                        </a>
                     </div>
                 </div>
             </div>
@@ -288,23 +268,6 @@
                     </form>
                 </div>
             </div>
-
-            <div class="card mt-3 mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="bi bi-info-circle"></i> Tentang OSS
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <p class="small text-muted">OSS - Online Shopping System adalah toko alat kesehatan terpercaya yang menyediakan berbagai produk kesehatan berkualitas.</p>
-                    <ul class="small text-muted">
-                        <li>Produk kesehatan original</li>
-                        <li>Pembayaran aman (prepaid/postpaid)</li>
-                        <li>Pengiriman cepat</li>
-                        <li>Customer service 24/7</li>
-                    </ul>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -358,7 +321,7 @@ function viewKategori(id) {
                 <div class="alert alert-info">
                     <h6>Deskripsi:</h6>
                     <p class="mb-2">{{ $kategori->deskripsi }}</p>
-                    <p class="mb-0"><strong>Harga Mulai:</strong> Rp {{ number_format($kategori->harga, 0, ',', '.') }}</p>
+                    <p class="mb-0"><strong>Harga:</strong> Rp {{ number_format($kategori->harga, 0, ',', '.') }}</p>
                 </div>
                 <div class="text-center">
                     <p class="text-muted">

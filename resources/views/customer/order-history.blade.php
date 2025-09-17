@@ -74,7 +74,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-8">
-                                    {{-- Detail Items yang Dibeli - DIPERBAIKI type casting --}}
+                                    {{-- Detail Items yang Dibeli - DIPERBAIKI dengan gambar --}}
                                     <h6>Barang yang Dipesan:</h6>
                                     @php
                                         // Ambil detail transaksi yang sebenarnya dari database
@@ -87,15 +87,40 @@
                                                 <div class="col-md-6 mb-3">
                                                     <div class="d-flex align-items-center">
                                                         <div class="me-3">
-                                                            {{-- Icon berdasarkan tipe item --}}
-                                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" 
-                                                                 style="width: 60px; height: 60px;">
-                                                                @if($item->item_type === 'toko_kategori')
-                                                                    <i class="bi bi-shop text-success"></i>
+                                                            {{-- Gambar berdasarkan tipe item --}}
+                                                            @if($item->item_type === 'toko_kategori')
+                                                                {{-- Cari gambar dari toko kategori --}}
+                                                                @php
+                                                                    $tokoKategori = \App\Models\TokoKategori::where('nama', explode(' (Toko:', $item->nama_item)[0])->first();
+                                                                @endphp
+                                                                @if($tokoKategori && $tokoKategori->gambar)
+                                                                    <img src="{{ asset('storage/' . $tokoKategori->gambar) }}" 
+                                                                         alt="{{ $item->nama_item }}" 
+                                                                         class="rounded"
+                                                                         style="width: 60px; height: 60px; object-fit: cover;">
                                                                 @else
-                                                                    <i class="bi bi-heart-pulse text-primary"></i>
+                                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                                                         style="width: 60px; height: 60px;">
+                                                                        <i class="bi bi-shop text-success"></i>
+                                                                    </div>
                                                                 @endif
-                                                            </div>
+                                                            @else
+                                                                {{-- Cari gambar dari kategori admin --}}
+                                                                @php
+                                                                    $kategori = \App\Models\Kategori::where('nama', $item->nama_item)->first();
+                                                                @endphp
+                                                                @if($kategori && $kategori->gambar)
+                                                                    <img src="{{ asset('storage/' . $kategori->gambar) }}" 
+                                                                         alt="{{ $item->nama_item }}" 
+                                                                         class="rounded"
+                                                                         style="width: 60px; height: 60px; object-fit: cover;">
+                                                                @else
+                                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                                                         style="width: 60px; height: 60px;">
+                                                                        <i class="bi bi-heart-pulse text-primary"></i>
+                                                                    </div>
+                                                                @endif
+                                                            @endif
                                                         </div>
                                                         <div>
                                                             <h6 class="mb-1">{{ $item->nama_item }}</h6>

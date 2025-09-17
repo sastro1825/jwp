@@ -32,49 +32,35 @@
         </div>
     @endif
 
-    {{-- Quick Menu untuk Customer dengan fitur permohonan toko --}}
+    {{-- Quick Menu untuk Customer - DIPERBAIKI --}}
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center flex-wrap">
                 <div>
-                    <h5 class="mb-0">
-                        @if(auth()->user()->role === 'pemilik_toko')
-                            Menu Pemilik Toko (Area Customer)
-                        @else
-                            Menu Customer
-                        @endif
-                    </h5>
+                    <h5 class="mb-0">Menu Customer</h5>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    @if(auth()->user()->role === 'pemilik_toko')
-                        <a href="{{ route('pemilik-toko.keranjang') }}" class="btn btn-primary">
-                            <i class="bi bi-cart3"></i> Keranjang Belanja
-                            @php
-                                $jumlahKeranjang = \App\Models\Keranjang::where('user_id', auth()->id())->sum('jumlah');
-                            @endphp
-                            @if($jumlahKeranjang > 0)
-                                <span class="badge bg-danger">{{ $jumlahKeranjang }}</span>
-                            @endif
-                        </a>
-                        <a href="{{ route('pemilik-toko.order.history') }}" class="btn btn-secondary">
-                            <i class="bi bi-clock-history"></i> Riwayat Pesanan
-                        </a>
-                        <a href="{{ route('pemilik-toko.dashboard') }}" class="btn btn-success">
-                            <i class="bi bi-shop"></i> Dashboard Toko
-                        </a>
-                    @else
-                        <a href="{{ route('customer.keranjang') }}" class="btn btn-primary">
-                            <i class="bi bi-cart3"></i> Keranjang Belanja
-                            @php
-                                $jumlahKeranjang = \App\Models\Keranjang::where('user_id', auth()->id())->sum('jumlah');
-                            @endphp
-                            @if($jumlahKeranjang > 0)
-                                <span class="badge bg-danger">{{ $jumlahKeranjang }}</span>
-                            @endif
-                        </a>
-                        <a href="{{ route('customer.order.history') }}" class="btn btn-secondary">
-                            <i class="bi bi-clock-history"></i> Riwayat Pesanan
-                        </a>
+                    <a href="{{ 
+                        auth()->user()->role === 'pemilik_toko' 
+                            ? route('pemilik-toko.keranjang') 
+                            : route('customer.keranjang') 
+                    }}" class="btn btn-primary">
+                        <i class="bi bi-cart3"></i> Keranjang Belanja
+                        @php
+                            $jumlahKeranjang = \App\Models\Keranjang::where('user_id', auth()->id())->sum('jumlah');
+                        @endphp
+                        @if($jumlahKeranjang > 0)
+                            <span class="badge bg-danger">{{ $jumlahKeranjang }}</span>
+                        @endif
+                    </a>
+                    <a href="{{ 
+                        auth()->user()->role === 'pemilik_toko' 
+                            ? route('pemilik-toko.order.history') 
+                            : route('customer.order.history') 
+                    }}" class="btn btn-secondary">
+                        <i class="bi bi-clock-history"></i> Riwayat Pesanan
+                    </a>
+                    @if(auth()->user()->role === 'customer')
                         @if(!auth()->user()->hasPendingTokoRequest() && !auth()->user()->hasApprovedToko())
                             <a href="{{ route('customer.toko.request') }}" class="btn btn-warning">
                                 <i class="bi bi-shop"></i> Ajukan Toko
@@ -84,6 +70,10 @@
                                 <i class="bi bi-shop"></i> Status Toko
                             </a>
                         @endif
+                    @elseif(auth()->user()->role === 'pemilik_toko')
+                        <a href="{{ route('pemilik-toko.dashboard') }}" class="btn btn-success">
+                            <i class="bi bi-shop"></i> Dashboard Toko
+                        </a>
                     @endif
                 </div>
             </div>
@@ -124,7 +114,7 @@
                                     <h6 class="card-title text-center">{{ $kategori->nama }}</h6>
                                     <div class="text-center mb-3">
                                         <span class="badge bg-success fs-6">
-                                            Mulai Rp {{ number_format($kategori->harga, 0, ',', '.') }}
+                                            Rp {{ number_format($kategori->harga, 0, ',', '.') }}
                                         </span>
                                     </div>
                                     @if($kategori->deskripsi)
@@ -138,15 +128,22 @@
                                                     onclick="viewKategori({{ $kategori->id }})">
                                                 <i class="bi bi-eye"></i> View
                                             </button>
+                                            {{-- Perbaikan form buy berdasarkan role --}}
                                             @if(auth()->user()->role === 'pemilik_toko')
-                                                <form action="{{ route('pemilik-toko.buy.from.kategori', $kategori->id) }}" method="POST" style="display: inline;" class="buy-form">
+                                                <form action="{{ route('pemilik-toko.buy.from.kategori', $kategori->id) }}" 
+                                                      method="POST" 
+                                                      style="display: inline;" 
+                                                      class="buy-form">
                                                     @csrf
                                                     <button type="submit" class="btn btn-primary btn-sm w-100">
                                                         <i class="bi bi-bag-plus"></i> Buy
                                                     </button>
                                                 </form>
                                             @else
-                                                <form action="{{ route('customer.buy.from.kategori', $kategori->id) }}" method="POST" style="display: inline;" class="buy-form">
+                                                <form action="{{ route('customer.buy.from.kategori', $kategori->id) }}" 
+                                                      method="POST" 
+                                                      style="display: inline;" 
+                                                      class="buy-form">
                                                     @csrf
                                                     <button type="submit" class="btn btn-primary btn-sm w-100">
                                                         <i class="bi bi-bag-plus"></i> Buy
@@ -276,17 +273,24 @@
                                         <i class="bi bi-chevron-right me-2"></i>
                                         {{ $kategori->nama }}
                                     </div>
+                                    {{-- Perbaikan form buy di sidebar --}}
                                     @if(auth()->user()->role === 'pemilik_toko')
-                                        <form action="{{ route('pemilik-toko.buy.from.kategori', $kategori->id) }}" method="POST" class="d-inline buy-form-sidebar">
+                                        <form action="{{ route('pemilik-toko.buy.from.kategori', $kategori->id) }}" 
+                                              method="POST" 
+                                              class="d-inline buy-form-sidebar">
                                             @csrf
-                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Buy {{ $kategori->nama }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary" 
+                                                    title="Buy {{ $kategori->nama }}">
                                                 <i class="bi bi-cart-plus"></i>
                                             </button>
                                         </form>
                                     @else
-                                        <form action="{{ route('customer.buy.from.kategori', $kategori->id) }}" method="POST" class="d-inline buy-form-sidebar">
+                                        <form action="{{ route('customer.buy.from.kategori', $kategori->id) }}" 
+                                              method="POST" 
+                                              class="d-inline buy-form-sidebar">
                                             @csrf
-                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Buy {{ $kategori->nama }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary" 
+                                                    title="Buy {{ $kategori->nama }}">
                                                 <i class="bi bi-cart-plus"></i>
                                             </button>
                                         </form>
@@ -715,6 +719,7 @@ function viewKategori(id) {
             buyBtn.onclick = function() {
                 const form = document.createElement('form');
                 form.method = 'POST';
+                // Perbaikan route berdasarkan role user
                 @if(auth()->user()->role === 'pemilik_toko')
                     form.action = '{{ route("pemilik-toko.buy.from.kategori", ":id") }}'.replace(':id', {{ $kategori->id }});
                 @else

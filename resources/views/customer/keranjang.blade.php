@@ -66,12 +66,32 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="me-3">
-                                            @if($item->kategori && $item->kategori->gambar)
+                                            {{-- Perbaikan gambar untuk item toko kategori --}}
+                                            @if($item->item_type === 'toko_kategori')
+                                                {{-- Cari gambar dari toko kategori berdasarkan nama --}}
+                                                @php
+                                                    $namaKategori = explode(' (Toko:', $item->nama_item)[0];
+                                                    $tokoKategori = \App\Models\TokoKategori::where('nama', $namaKategori)->first();
+                                                @endphp
+                                                @if($tokoKategori && $tokoKategori->gambar)
+                                                    <img src="{{ asset('storage/' . $tokoKategori->gambar) }}" 
+                                                         alt="{{ $item->nama_item }}" 
+                                                         class="rounded"
+                                                         style="width: 60px; height: 60px; object-fit: cover;">
+                                                @else
+                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                                         style="width: 60px; height: 60px;">
+                                                        <i class="bi bi-shop text-success"></i>
+                                                    </div>
+                                                @endif
+                                            @elseif($item->kategori && $item->kategori->gambar)
+                                                {{-- Gambar kategori admin --}}
                                                 <img src="{{ asset('storage/' . $item->kategori->gambar) }}" 
                                                      alt="{{ $item->nama_item }}" 
                                                      class="rounded"
                                                      style="width: 60px; height: 60px; object-fit: cover;">
                                             @else
+                                                {{-- Placeholder jika tidak ada gambar --}}
                                                 <div class="bg-light rounded d-flex align-items-center justify-content-center" 
                                                      style="width: 60px; height: 60px;">
                                                     <i class="bi bi-heart-pulse text-primary"></i>
@@ -80,12 +100,17 @@
                                         </div>
                                         <div>
                                             <h6 class="mb-1">{{ $item->nama_item }}</h6>
-                                            <small class="text-muted">Ditambahkan: {{ $item->created_at->format('d/m/Y H:i') }}</small>
+                                            {{-- Perbaikan timezone untuk jam --}}
+                                            <small class="text-muted">Ditambahkan: {{ $item->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') }} WIB</small>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    @if($item->kategori)
+                                    {{-- Perbaikan kategori untuk toko kategori --}}
+                                    @if($item->item_type === 'toko_kategori')
+                                        <span class="badge bg-success">Toko Mitra</span>
+                                        <br><small class="text-muted">{{ explode(' (Toko:', $item->nama_item)[0] }}</small>
+                                    @elseif($item->kategori)
                                         <span class="badge bg-info">{{ $item->kategori->getCategoryTypeLabel() }}</span>
                                         <br><small class="text-muted">{{ $item->kategori->nama }}</small>
                                     @else

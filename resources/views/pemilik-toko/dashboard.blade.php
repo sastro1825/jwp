@@ -25,18 +25,25 @@
         </div>
     @endif
 
+    {{-- Link kembali ke customer area - DIPERBAIKI tanpa keranjang dan riwayat --}}
+    <div class="mt-4">
+        <a href="{{ route('customer.area') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Kembali ke Area Customer
+        </a>
+    </div>
+
     {{-- Info Toko --}}
     @php
         $toko = auth()->user()->toko;
     @endphp
 
     @if($toko)
-        <div class="alert alert-success">
+        <div class="alert alert-success mt-4">
             <h5><i class="bi bi-shop"></i> Toko Aktif: {{ $toko->nama }}</h5>
             <p class="mb-0">Status: <span class="badge bg-success">{{ ucfirst($toko->status) }}</span> | Kategori: {{ ucwords(str_replace('-', ' ', $toko->kategori_usaha)) }}</p>
         </div>
     @else
-        <div class="alert alert-info">
+        <div class="alert alert-info mt-4">
             <h5><i class="bi bi-info-circle"></i> Info Toko</h5>
             <p class="mb-0">Data toko belum tersinkronisasi. Silakan hubungi admin jika ada masalah.</p>
         </div>
@@ -152,75 +159,56 @@
         </div>
     </div>
 
-    {{-- Link kembali ke customer area dengan route yang benar --}}
-    <div class="mt-4">
-        <a href="{{ route('customer.area') }}" class="btn btn-outline-primary">
-            <i class="bi bi-arrow-left"></i> Kembali ke Area Customer
-        </a>
-        <a href="{{ route('pemilik-toko.keranjang') }}" class="btn btn-outline-success ms-2">
-            <i class="bi bi-cart3"></i> Keranjang Belanja
-            @php
-                $jumlahKeranjang = \App\Models\Keranjang::where('user_id', auth()->id())->sum('jumlah');
-            @endphp
-            @if($jumlahKeranjang > 0)
-                <span class="badge bg-danger">{{ $jumlahKeranjang }}</span>
-            @endif
-        </a>
-        <a href="{{ route('pemilik-toko.order.history') }}" class="btn btn-outline-info ms-2">
-            <i class="bi bi-clock-history"></i> Riwayat Pesanan
-        </a>
-    </div>
-</div>
-
-{{-- Modal Profile --}}
-<div class="modal fade" id="profileModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-person"></i> Profile Pemilik Toko
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center mb-3">
-                    <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="rounded-circle" width="80" height="80">
-                    <h5 class="mt-2">{{ auth()->user()->name }}</h5>
-                    <span class="badge bg-success">Pemilik Toko</span>
+    {{-- Modal Profile --}}
+    <div class="modal fade" id="profileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person"></i> Profile Pemilik Toko
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                
-                <table class="table table-sm">
-                    <tr>
-                        <td><strong>Email:</strong></td>
-                        <td>{{ auth()->user()->email }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Alamat:</strong></td>
-                        <td>{{ auth()->user()->getFullAddress() }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>No. HP:</strong></td>
-                        <td>{{ auth()->user()->contact_no ?? '-' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Tanggal Lahir:</strong></td>
-                        <td>{{ auth()->user()->formatted_dob ?? '-' }}</td>
-                    </tr>
-                    @if($toko)
-                    <tr>
-                        <td><strong>Nama Toko:</strong></td>
-                        <td>{{ $toko->nama }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Kategori Usaha:</strong></td>
-                        <td>{{ ucwords(str_replace('-', ' ', $toko->kategori_usaha)) }}</td>
-                    </tr>
-                    @endif
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                <a href="#" class="btn btn-primary">Edit Profile</a>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="rounded-circle" width="80" height="80">
+                        <h5 class="mt-2">{{ auth()->user()->name }}</h5>
+                        <span class="badge bg-success">Pemilik Toko</span>
+                    </div>
+                    
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Email:</strong></td>
+                            <td>{{ auth()->user()->email }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Alamat:</strong></td>
+                            <td>{{ auth()->user()->getFullAddress() }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>No. HP:</strong></td>
+                            <td>{{ auth()->user()->contact_no ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tanggal Lahir:</strong></td>
+                            <td>{{ auth()->user()->formatted_dob ?? '-' }}</td>
+                        </tr>
+                        @if($toko)
+                        <tr>
+                            <td><strong>Nama Toko:</strong></td>
+                            <td>{{ $toko->nama }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Kategori Usaha:</strong></td>
+                            <td>{{ ucwords(str_replace('-', ' ', $toko->kategori_usaha)) }}</td>
+                        </tr>
+                        @endif
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <a href="#" class="btn btn-primary">Edit Profile</a>
+                </div>
             </div>
         </div>
     </div>
@@ -229,22 +217,9 @@
 
 @push('scripts')
 <script>
-// Auto refresh statistik setiap 30 detik
+// Auto refresh statistik setiap 30 detik - DIPERBAIKI tanpa keranjang
 setInterval(function() {
-    // Refresh statistik keranjang
-    if (document.querySelector('.badge.bg-danger')) {
-        fetch('{{ route("pemilik-toko.keranjang.data") }}')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.totalItems > 0) {
-                    const badges = document.querySelectorAll('.badge.bg-danger');
-                    badges.forEach(badge => {
-                        badge.textContent = data.totalItems;
-                    });
-                }
-            })
-            .catch(error => console.log('Failed to refresh cart data'));
-    }
+    console.log('Dashboard statistik refreshed');
 }, 30000);
 
 // Auto hide alerts
