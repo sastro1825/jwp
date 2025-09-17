@@ -9,7 +9,7 @@ use App\Http\Controllers\PemilikTokoController;
 // Route utama OSS - tampilkan halaman produk berdasarkan login status
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Route khusus untuk customer area (untuk link "Kembali ke Area Customer") - PERBAIKAN PENGAMBILAN DATA
+// Route untuk customer area dengan perbaikan data kategori toko
 Route::get('/customer-area', function() {
     if (!auth()->check()) {
         return redirect()->route('login')->with('error', 'Silakan login untuk mengakses area customer.');
@@ -20,19 +20,16 @@ Route::get('/customer-area', function() {
         return redirect()->route('admin.dashboard')->with('error', 'Admin tidak dapat mengakses area customer.');
     }
     
-    // Ambil kategori admin (kategori utama sistem)
+    // Ambil kategori admin
     $kategoris = \App\Models\Kategori::all();
     
-    // Ambil kategori dari semua toko - PERBAIKAN PENGAMBILAN DATA
+    // Ambil kategori toko langsung di route
     $kategoriToko = \App\Models\TokoKategori::with('toko')
         ->whereHas('toko', function($query) {
             $query->where('status', 'approved');
         })
         ->get();
 
-    // Debug untuk memastikan data kategori toko terambil
-    \Log::info('Customer Area - Kategori Toko Count: ' . $kategoriToko->count());
-    
     return view('halaman-produk-customer', compact('kategoris', 'kategoriToko'));
 })->name('customer.area');
 

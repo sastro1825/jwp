@@ -20,6 +20,30 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class CustomerController extends Controller
 {
     /**
+     * Fungsi untuk preload dan validate gambar kategori toko
+     */
+    private function getValidatedKategoriToko()
+    {
+        return TokoKategori::with('toko')
+            ->whereHas('toko', function($query) {
+                $query->where('status', 'approved');
+            })
+            ->get()
+            ->map(function($kategori) {
+                // Validasi keberadaan file gambar
+                if ($kategori->gambar) {
+                    $fullPath = storage_path('app/public/' . $kategori->gambar);
+                    $kategori->image_valid = file_exists($fullPath) && filesize($fullPath) > 0;
+                    $kategori->image_url = asset('storage/' . $kategori->gambar);
+                } else {
+                    $kategori->image_valid = false;
+                    $kategori->image_url = null;
+                }
+                return $kategori;
+            });
+    }
+
+    /**
      * Cek apakah customer bisa menggunakan COD berdasarkan kota - PERBAIKAN LOGIC
      */
     private function canUseCOD($keranjangItems, $userCity)

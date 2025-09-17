@@ -8,6 +8,7 @@ use App\Models\ShippingOrder;
 use App\Models\Toko;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class PemilikTokoController extends Controller
 {
@@ -31,7 +32,7 @@ class PemilikTokoController extends Controller
     }
 
     /**
-     * Store Kategori Baru untuk Pemilik Toko - PERBAIKI PATH UPLOAD
+     * Store Kategori Baru untuk Pemilik Toko - PERBAIKAN PATH UPLOAD
      */
     public function storeKategori(Request $request)
     {
@@ -50,29 +51,43 @@ class PemilikTokoController extends Controller
                 'gambar' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
             ]);
 
-            // Handle upload gambar dengan path yang benar
+            // PERBAIKAN: Handle upload gambar dengan validasi yang lebih ketat
             if ($request->hasFile('gambar')) {
                 $file = $request->file('gambar');
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('toko-kategoris', $filename, 'public');
-                $validated['gambar'] = $path;
                 
-                // Debug log untuk troubleshooting
-                \Log::info('Image uploaded', [
-                    'original_name' => $file->getClientOriginalName(),
-                    'stored_path' => $path,
-                    'full_path' => storage_path('app/public/' . $path),
-                    'file_exists' => file_exists(storage_path('app/public/' . $path))
-                ]);
+                // Pastikan file valid dan bisa dibaca
+                if ($file->isValid()) {
+                    $filename = time() . '_' . Str::slug($validated['nama']) . '.' . $file->getClientOriginalExtension();
+                    
+                    // Simpan dengan path yang eksplisit
+                    $path = $file->storeAs('toko-kategoris', $filename, 'public');
+                    
+                    // Verifikasi file tersimpan
+                    if (Storage::disk('public')->exists($path)) {
+                        $validated['gambar'] = $path;
+                        
+                        Log::info('Image uploaded successfully', [
+                            'filename' => $filename,
+                            'path' => $path,
+                            'size' => $file->getSize(),
+                            'mime' => $file->getMimeType()
+                        ]);
+                    } else {
+                        Log::error('Failed to verify uploaded file');
+                        return redirect()->back()->with('error', 'Gagal menyimpan gambar.');
+                    }
+                } else {
+                    return redirect()->back()->with('error', 'File gambar tidak valid.');
+                }
             }
 
             $validated['toko_id'] = $toko->id;
-
             TokoKategori::create($validated);
 
             return redirect()->route('pemilik-toko.kategori')->with('success', 'Kategori berhasil ditambahkan ke toko Anda.');
+            
         } catch (\Exception $e) {
-            \Log::error('Error creating toko kategori: ' . $e->getMessage());
+            Log::error('Error creating toko kategori: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal menambahkan kategori: ' . $e->getMessage());
         }
     }
@@ -110,14 +125,27 @@ class PemilikTokoController extends Controller
                 if ($kategori->gambar) {
                     Storage::disk('public')->delete($kategori->gambar);
                 }
-                $path = $request->file('gambar')->store('toko-kategoris', 'public');
-                $validated['gambar'] = $path;
+                $filename = time() . '_' . Str::slug($validated['nama']) . '.' . $request->file('gambar')->getClientOriginalExtension();
+                $path = $request->file('gambar')->storeAs('toko-kategoris', $filename, 'public');
+                if (Storage::disk('public')->exists($path)) {
+                    $validated['gambar'] = $path;
+                    Log::info('Image updated successfully', [
+                        'filename' => $filename,
+                        'path' => $path,
+                        'size' => $request->file('gambar')->getSize(),
+                        'mime' => $request->file('gambar')->getMimeType()
+                    ]);
+                } else {
+                    Log::error('Failed to verify updated file');
+                    return redirect()->back()->with('error', 'Gagal menyimpan gambar.');
+                }
             }
 
             $kategori->update($validated);
 
             return redirect()->route('pemilik-toko.kategori')->with('success', 'Kategori berhasil diupdate.');
         } catch (\Exception $e) {
+            Log::error('Error updating toko kategori: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal mengupdate kategori: ' . $e->getMessage());
         }
     }
@@ -140,6 +168,7 @@ class PemilikTokoController extends Controller
 
             return redirect()->route('pemilik-toko.kategori')->with('success', 'Kategori berhasil dihapus.');
         } catch (\Exception $e) {
+            Log::error('Error deleting toko kategori: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal menghapus kategori: ' . $e->getMessage());
         }
     }
@@ -218,7 +247,8 @@ class PemilikTokoController extends Controller
             return redirect()->route('pemilik-toko.shipping')->with('success', 'Status pengiriman berhasil diupdate.');
             
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal mengupdate status pengiriman.');
+            Log::error('Error updating shipping status: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengupdate status pengiriman: ' . $e->getMessage());
         }
     }
 }

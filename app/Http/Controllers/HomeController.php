@@ -11,15 +11,52 @@ use Illuminate\Support\Facades\Log;
 class HomeController extends Controller
 {
     /**
-     * Tampilkan halaman home - DENGAN PERBAIKAN PATH GAMBAR
+     * Fungsi helper untuk validasi dan preload gambar kategori toko
+     */
+    private function getValidatedKategoriToko()
+    {
+        return \App\Models\TokoKategori::with('toko')
+            ->whereHas('toko', function($query) {
+                $query->where('status', 'approved');
+            })
+            ->get()
+            ->map(function($kategori) {
+                // Validasi keberadaan file gambar
+                if ($kategori->gambar) {
+                    $fullPath = storage_path('app/public/' . $kategori->gambar);
+                    $kategori->image_valid = file_exists($fullPath) && filesize($fullPath) > 0;
+                    $kategori->image_url = asset('storage/' . $kategori->gambar);
+                    
+                    // Log untuk debugging
+                    \Log::info('Image validation', [
+                        'kategori' => $kategori->nama,
+                        'path' => $kategori->gambar,
+                        'full_path' => $fullPath,
+                        'exists' => file_exists($fullPath),
+                        'size' => file_exists($fullPath) ? filesize($fullPath) : 0,
+                        'valid' => $kategori->image_valid
+                    ]);
+                } else {
+                    $kategori->image_valid = false;
+                    $kategori->image_url = null;
+                }
+                return $kategori;
+            })
+            ->filter(function($kategori) {
+                // Filter kategori yang memiliki toko valid
+                return $kategori->toko && $kategori->toko->status === 'approved';
+            });
+    }
+
+    /**
+     * Tampilkan halaman home - VERSI BARU TANPA VALIDASI GAMBAR RUMIT
      */
     public function index()
     {
-        // Cek apakah user sudah login
+        // Cek login user
         if (Auth::check()) {
             $user = Auth::user();
             
-            // Redirect berdasarkan role user yang sudah login
             if ($user->role === 'admin') {
                 return redirect()->route('admin.dashboard');
             } elseif ($user->role === 'customer') {
@@ -29,26 +66,15 @@ class HomeController extends Controller
             }
         }
 
-        // Ambil kategori admin untuk guest
+        // Ambil kategori admin
         $kategoris = Kategori::all();
         
-        // Ambil kategori dari toko dengan perbaikan path gambar
+        // PERBAIKAN SEDERHANA: Langsung ambil kategori toko tanpa validasi rumit
         $kategoriToko = \App\Models\TokoKategori::with('toko')
             ->whereHas('toko', function($query) {
                 $query->where('status', 'approved');
             })
             ->get();
-
-        // Debug path gambar untuk troubleshooting - PERBAIKAN PATH GAMBAR
-        foreach($kategoriToko as $kategori) {
-            \Log::info('Debug Kategori Toko Gambar', [
-                'id' => $kategori->id,
-                'nama' => $kategori->nama,
-                'gambar_path' => $kategori->gambar,
-                'full_url' => $kategori->gambar ? asset('storage/' . $kategori->gambar) : null,
-                'file_exists' => $kategori->gambar ? \Storage::disk('public')->exists($kategori->gambar) : false
-            ]);
-        }
 
         return view('halaman-produk-guest', compact('kategoris', 'kategoriToko'));
     }
@@ -91,11 +117,14 @@ class HomeController extends Controller
             $kategori = Kategori::with('produks')->findOrFail($id);
             $kategoris = Kategori::all(); // Untuk sidebar
             
+            // PERBAIKAN: Ambil kategori toko dengan validasi gambar
+            $kategoriToko = $this->getValidatedKategoriToko();
+            
             // Cek status login untuk menentukan view
             if (Auth::check()) {
-                return view('halaman-produk-customer', compact('kategoris', 'kategori'));
+                return view('halaman-produk-customer', compact('kategoris', 'kategori', 'kategoriToko'));
             } else {
-                return view('halaman-produk-guest', compact('kategoris', 'kategori'));
+                return view('halaman-produk-guest', compact('kategoris', 'kategori', 'kategoriToko'));
             }
         } catch (\Exception $e) {
             return redirect()->route('home')->with('error', 'Kategori tidak ditemukan');
