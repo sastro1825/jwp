@@ -98,7 +98,7 @@ div class="info-box">
         <ul>
             <li>Simpan laporan PDF ini sebagai bukti pembelian</li>
             <li>Untuk pembayaran postpaid, harap siapkan uang pas saat barang tiba</li>
-            <li>Hubungi customer service jika ada pertanyaan: fbuquerquestudent28@gmail.com</li>
+            <li>Hubungi customer service jika ada pertanyaan: fajarstudent28@gmail.com</li>
         </ul>
 
         <p>Jika ada pertanyaan atau kendala, jangan ragu untuk menghubungi tim customer service kami.</p>
