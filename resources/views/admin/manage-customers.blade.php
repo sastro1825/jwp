@@ -1,15 +1,17 @@
 @extends('layouts.app')
 
+{{-- Bagian konten utama --}}
 @section('content')
 {{-- Halaman Kelola Customer --}}
 <div class="container">
-    {{-- Tombol kembali ke dashboard dipindah ke atas --}}
+    {{-- Tombol kembali ke dashboard --}}
     <div class="mb-3">
         <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
         </a>
     </div>
 
+    {{-- Judul dan deskripsi halaman --}}
     <div class="row">
         <div class="col-12">
             <h1>Kelola Customers</h1>
@@ -17,7 +19,7 @@
         </div>
     </div>
 
-    {{-- Alert Messages --}}
+    {{-- Notifikasi sukses --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -25,6 +27,7 @@
         </div>
     @endif
 
+    {{-- Notifikasi error --}}
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
@@ -32,15 +35,18 @@
         </div>
     @endif
 
-    {{-- Table Customer Data --}}
+    {{-- Tabel data customer --}}
     <div class="card">
+        {{-- Header tabel dengan jumlah customer --}}
         <div class="card-header">
             <h5 class="mb-0">Daftar Customer (Total: {{ $jumlahCustomer }})</h5>
         </div>
         <div class="card-body">
+            {{-- Cek apakah ada data customer --}}
             @if($customers->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
+                        {{-- Header tabel --}}
                         <thead class="table-dark">
                             <tr>
                                 <th>ID</th>
@@ -53,11 +59,13 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {{-- Looping data customer --}}
                             @foreach($customers as $customer)
                             <tr>
                                 <td>{{ $customer->id }}</td>
                                 <td>
                                     <strong>{{ $customer->name }}</strong>
+                                    {{-- Badge untuk role customer --}}
                                     @if($customer->role === 'customer')
                                         <span class="badge bg-primary ms-1">Customer</span>
                                     @endif
@@ -67,13 +75,13 @@
                                 <td>{{ $customer->contact_no ?? '-' }}</td>
                                 <td>{{ $customer->created_at->format('d/m/Y') }}</td>
                                 <td>
-                                    {{-- Tombol Edit Customer --}}
+                                    {{-- Tombol edit customer --}}
                                     <a href="{{ route('admin.customers.edit', $customer->id) }}" 
                                        class="btn btn-sm btn-warning me-1" title="Edit Customer">
                                         <i class="bi bi-pencil-square"></i> Edit
                                     </a>
                                     
-                                    {{-- Tombol Hapus Customer --}}
+                                    {{-- Tombol hapus customer --}}
                                     <button type="button" class="btn btn-sm btn-danger" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#deleteModal{{ $customer->id }}"
@@ -81,7 +89,7 @@
                                         <i class="bi bi-trash"></i> Hapus
                                     </button>
                                     
-                                    {{-- Modal Konfirmasi Hapus --}}
+                                    {{-- Modal konfirmasi hapus --}}
                                     <div class="modal fade" id="deleteModal{{ $customer->id }}" tabindex="-1">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
@@ -98,6 +106,7 @@
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                    {{-- Form untuk menghapus customer --}}
                                                     <form action="{{ route('admin.customers.delete', $customer->id) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         @method('DELETE')
@@ -114,12 +123,12 @@
                     </table>
                 </div>
 
-                {{-- Pagination Links --}}
+                {{-- Link paginasi --}}
                 <div class="mt-3">
                     {{ $customers->links() }}
                 </div>
             @else
-                {{-- Tampilan jika tidak ada customer --}}
+                {{-- Tampilan jika tidak ada data customer --}}
                 <div class="text-center py-4">
                     <i class="bi bi-people" style="font-size: 4rem; color: #ccc;"></i>
                     <h4 class="mt-3">Belum Ada Customer</h4>

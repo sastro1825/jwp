@@ -9,293 +9,235 @@ class Keranjang extends Model
 {
     use HasFactory;
 
-    protected $table = 'keranjangs'; // Nama tabel keranjang
+    protected $table = 'keranjangs'; // Nama tabel di database
 
-    /**
-     * The attributes that are mass assignable - DIPERBAIKI untuk support kategori, produk, dan toko_kategori
-     */
+    // Atribut yang dapat diisi secara massal
     protected $fillable = [
-        'user_id',        // ID user yang memiliki keranjang
-        'produk_id',      // ID produk (untuk buy dari produk)
-        'kategori_id',    // ID kategori (untuk buy dari kategori admin)
-        'nama_item',      // Nama item (dari kategori/produk/toko_kategori)
+        'user_id',        // ID pengguna yang memiliki keranjang
+        'produk_id',      // ID produk untuk pembelian dari produk
+        'kategori_id',    // ID kategori untuk pembelian dari kategori admin
+        'nama_item',      // Nama item dari kategori, produk, atau toko_kategori
         'harga_item',     // Harga item
         'deskripsi_item', // Deskripsi item
-        'item_type',      // Jenis item: 'kategori', 'produk', 'toko_kategori' - DITAMBAH SUPPORT TOKO_KATEGORI
+        'item_type',      // Jenis item: 'kategori', 'produk', atau 'toko_kategori'
         'jumlah',         // Jumlah item yang dibeli
     ];
 
-    /**
-     * The attributes that should be cast - untuk konversi data type
-     */
+    // Atribut yang dikonversi tipe datanya
     protected $casts = [
-        'harga_item' => 'float', // Ubah dari decimal ke float
-        'jumlah' => 'integer',   // Cast jumlah ke integer
+        'harga_item' => 'float', // Konversi harga_item ke tipe float
+        'jumlah' => 'integer',   // Konversi jumlah ke tipe integer
     ];
 
-    /**
-     * Relasi ke user yang memiliki keranjang
-     */
+    // Relasi ke model User
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class); // Menghubungkan ke pengguna
     }
 
-    /**
-     * Relasi ke kategori (untuk item_type = 'kategori')
-     */
+    // Relasi ke model Kategori untuk item_type 'kategori'
     public function kategori()
     {
-        return $this->belongsTo(Kategori::class);
+        return $this->belongsTo(Kategori::class); // Menghubungkan ke kategori
     }
 
-    /**
-     * Relasi ke produk (untuk item_type = 'produk') - DITAMBAHKAN
-     */
+    // Relasi ke model Produk untuk item_type 'produk'
     public function produk()
     {
-        return $this->belongsTo(Produk::class);
+        return $this->belongsTo(Produk::class); // Menghubungkan ke produk
     }
 
-    /**
-     * Accessor untuk mendapatkan nama item - DIPERBAIKI
-     * Otomatis ambil dari kategori/produk jika nama_item kosong
-     */
+    // Accessor untuk mendapatkan nama item
     public function getNamaAttribute()
     {
         if ($this->nama_item) {
-            return $this->nama_item;
+            return $this->nama_item; // Kembalikan nama_item jika ada
         }
 
         if ($this->kategori) {
-            return $this->kategori->nama;
+            return $this->kategori->nama; // Ambil nama dari kategori jika tersedia
         }
 
         if ($this->produk) {
-            return $this->produk->nama;
+            return $this->produk->nama; // Ambil nama dari produk jika tersedia
         }
 
-        return 'Item Tidak Diketahui';
+        return 'Item Tidak Diketahui'; // Nama default jika tidak ada data
     }
 
-    /**
-     * Accessor untuk mendapatkan harga item dengan type safety
-     */
+    // Accessor untuk mendapatkan harga item
     public function getHargaAttribute()
     {
         if ($this->harga_item) {
-            return (float) $this->harga_item; // Cast ke float untuk menghindari error
+            return (float) $this->harga_item; // Kembalikan harga_item sebagai float
         }
 
         if ($this->kategori) {
-            return (float) $this->kategori->harga;
+            return (float) $this->kategori->harga; // Ambil harga dari kategori
         }
 
         if ($this->produk) {
-            return (float) $this->produk->harga;
+            return (float) $this->produk->harga; // Ambil harga dari produk
         }
 
-        return 0.0; // Return float 0
+        return 0.0; // Kembalikan 0 jika tidak ada harga
     }
 
-    /**
-     * Accessor untuk mendapatkan deskripsi item - DIPERBAIKI
-     * Otomatis ambil dari kategori/produk jika deskripsi_item kosong
-     */
+    // Accessor untuk mendapatkan deskripsi item
     public function getDeskripsiAttribute()
     {
         if ($this->deskripsi_item) {
-            return $this->deskripsi_item;
+            return $this->deskripsi_item; // Kembalikan deskripsi_item jika ada
         }
 
         if ($this->kategori) {
-            return $this->kategori->deskripsi;
+            return $this->kategori->deskripsi; // Ambil deskripsi dari kategori
         }
 
         if ($this->produk) {
-            return $this->produk->deskripsi;
+            return $this->produk->deskripsi; // Ambil deskripsi dari produk
         }
 
-        return '';
+        return ''; // Kembalikan string kosong jika tidak ada deskripsi
     }
 
-    /**
-     * Accessor untuk mendapatkan subtotal dengan type safety
-     */
+    // Accessor untuk menghitung subtotal
     public function getSubtotalAttribute()
     {
-        return (float) $this->jumlah * $this->getHargaAttribute();
+        return (float) $this->jumlah * $this->getHargaAttribute(); // Hitung subtotal (jumlah * harga)
     }
 
-    /**
-     * Accessor untuk mendapatkan harga terformat
-     * Usage: $item->harga_formatted
-     */
+    // Accessor untuk format harga dengan Rupiah
     public function getHargaFormattedAttribute()
     {
-        return 'Rp ' . number_format($this->harga, 0, ',', '.');
+        return 'Rp ' . number_format($this->harga, 0, ',', '.'); // Format harga ke format Rupiah
     }
 
-    /**
-     * Accessor untuk mendapatkan subtotal terformat
-     * Usage: $item->subtotal_formatted
-     */
+    // Accessor untuk format subtotal dengan Rupiah
     public function getSubtotalFormattedAttribute()
     {
-        return 'Rp ' . number_format($this->subtotal, 0, ',', '.');
+        return 'Rp ' . number_format($this->subtotal, 0, ',', '.'); // Format subtotal ke format Rupiah
     }
 
-    /**
-     * Accessor untuk mendapatkan ID item untuk tampilan - DIPERBAIKI
-     * Usage: $item->item_id_display (untuk tampilan)
-     */
+    // Accessor untuk ID item untuk tampilan
     public function getItemIdDisplayAttribute()
     {
         if ($this->kategori) {
-            return 'KAT-' . $this->kategori_id;
+            return 'KAT-' . $this->kategori_id; // Format ID untuk kategori
         }
 
         if ($this->produk) {
-            return 'PRD-' . $this->produk_id;
+            return 'PRD-' . $this->produk_id; // Format ID untuk produk
         }
 
-        return 'UNKNOWN';
+        return 'UNKNOWN'; // ID default jika tidak diketahui
     }
 
-    /**
-     * Accessor untuk nama produk yang digunakan di view - DITAMBAHKAN
-     * Untuk kompatibilitas dengan view yang menggunakan nama_produk
-     */
+    // Accessor untuk nama produk di view
     public function getNamaProdukAttribute()
     {
-        return $this->nama; // Menggunakan accessor getNamaAttribute()
+        return $this->nama; // Menggunakan accessor getNamaAttribute
     }
 
-    /**
-     * Scope untuk filter berdasarkan kategori
-     * Usage: Keranjang::kategori()->get()
-     */
+    // Scope untuk filter item berdasarkan kategori
     public function scopeKategori($query)
     {
-        return $query->where('item_type', 'kategori');
+        return $query->where('item_type', 'kategori'); // Filter item dengan item_type 'kategori'
     }
 
-    /**
-     * Scope untuk filter berdasarkan produk - DITAMBAHKAN
-     * Usage: Keranjang::produk()->get()
-     */
+    // Scope untuk filter item berdasarkan produk
     public function scopeProduk($query)
     {
-        return $query->where('item_type', 'produk');
+        return $query->where('item_type', 'produk'); // Filter item dengan item_type 'produk'
     }
 
-    /**
-     * Static method untuk membuat item keranjang dari kategori
-     * Usage: Keranjang::createFromKategori($user_id, $kategori, $jumlah)
-     */
+    // Membuat item keranjang dari kategori
     public static function createFromKategori($user_id, $kategori, $jumlah = 1)
     {
         return self::create([
             'user_id' => $user_id,
             'kategori_id' => $kategori->id,
-            'produk_id' => null, // NULL untuk kategori
+            'produk_id' => null, // Set null untuk produk
             'nama_item' => $kategori->nama,
             'harga_item' => $kategori->harga,
             'deskripsi_item' => $kategori->deskripsi,
             'item_type' => 'kategori',
             'jumlah' => $jumlah,
-        ]);
+        ]); // Buat entri keranjang dari data kategori
     }
 
-    /**
-     * Static method untuk membuat item keranjang dari produk - DITAMBAHKAN
-     * Usage: Keranjang::createFromProduk($user_id, $produk, $jumlah)
-     */
+    // Membuat item keranjang dari produk
     public static function createFromProduk($user_id, $produk, $jumlah = 1)
     {
         return self::create([
             'user_id' => $user_id,
-            'kategori_id' => null, // NULL untuk produk
+            'kategori_id' => null, // Set null untuk kategori
             'produk_id' => $produk->id,
             'nama_item' => $produk->nama,
             'harga_item' => $produk->harga,
             'deskripsi_item' => $produk->deskripsi,
             'item_type' => 'produk',
             'jumlah' => $jumlah,
-        ]);
+        ]); // Buat entri keranjang dari data produk
     }
 
-    /**
-     * Method untuk cek apakah item adalah kategori
-     */
+    // Cek apakah item adalah kategori
     public function isKategori()
     {
-        return $this->item_type === 'kategori';
+        return $this->item_type === 'kategori'; // Kembalikan true jika item_type adalah 'kategori'
     }
 
-    /**
-     * Method untuk cek apakah item adalah produk - DITAMBAHKAN
-     */
+    // Cek apakah item adalah produk
     public function isProduk()
     {
-        return $this->item_type === 'produk';
+        return $this->item_type === 'produk'; // Kembalikan true jika item_type adalah 'produk'
     }
 
-    /**
-     * Method untuk cek apakah item adalah toko kategori - FUNGSI BARU
-     */
+    // Cek apakah item adalah toko kategori
     public function isTokoKategori()
     {
-        return $this->item_type === 'toko_kategori';
+        return $this->item_type === 'toko_kategori'; // Kembalikan true jika item_type adalah 'toko_kategori'
     }
 
-    /**
-     * Method untuk mendapatkan gambar item - DITAMBAHKAN
-     * Untuk kompatibilitas dengan view yang menampilkan gambar
-     */
+    // Accessor untuk mendapatkan gambar item
     public function getGambarAttribute()
     {
         if ($this->kategori && $this->kategori->gambar) {
-            return $this->kategori->gambar;
+            return $this->kategori->gambar; // Ambil gambar dari kategori
         }
 
         if ($this->produk && $this->produk->gambar) {
-            return $this->produk->gambar;
+            return $this->produk->gambar; // Ambil gambar dari produk
         }
 
-        return null;
+        return null; // Kembalikan null jika tidak ada gambar
     }
 
-    /**
-     * Method untuk mendapatkan URL gambar lengkap - DITAMBAHKAN
-     */
+    // Accessor untuk mendapatkan URL gambar
     public function getImageUrlAttribute()
     {
         if ($this->gambar) {
-            return asset('storage/' . $this->gambar);
+            return asset('storage/' . $this->gambar); // Kembalikan URL lengkap gambar
         }
 
-        return null;
+        return null; // Kembalikan null jika tidak ada gambar
     }
 
-    /**
-     * Method untuk mendapatkan sumber item - DIPERBAIKI dengan toko kategori
-     */
+    // Accessor untuk mendapatkan sumber item
     public function getSumberAttribute()
     {
         if ($this->isKategori()) {
-            return 'Kategori Admin';
+            return 'Kategori Admin'; // Sumber dari kategori admin
         }
 
         if ($this->isProduk() && $this->produk && $this->produk->toko) {
-            return 'Toko: ' . $this->produk->toko->nama;
-        }
-        
-        // Support untuk toko kategori - BARU
-        if ($this->isTokoKategori()) {
-            return 'Kategori Toko Mitra';
+            return 'Toko: ' . $this->produk->toko->nama; // Sumber dari toko produk
         }
 
-        return 'Tidak Diketahui';
+        if ($this->isTokoKategori()) {
+            return 'Kategori Toko Mitra'; // Sumber dari toko kategori
+        }
+
+        return 'Tidak Diketahui'; // Sumber default jika tidak diketahui
     }
 }

@@ -10,34 +10,30 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
+// Kelas untuk menangani permintaan login
 class LoginRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request
-     */
+    // Fungsi untuk menentukan otorisasi pengguna
     public function authorize(): bool
     {
+        // Mengizinkan semua pengguna untuk membuat permintaan
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request - support login dengan username atau email
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+    // Aturan validasi untuk login menggunakan username atau email
     public function rules(): array
     {
+        // Validasi input login dan password
         return [
-            'login' => ['required', 'string', 'max:255'], // Field login bisa username atau email
-            'password' => ['required', 'string'],
+            'login' => ['required', 'string', 'max:255'], // Input login bisa username atau email
+            'password' => ['required', 'string'], // Input password wajib string
         ];
     }
 
-    /**
-     * Get custom messages for validation errors
-     */
+    // Pesan kustom untuk error validasi
     public function messages(): array
     {
+        // Kumpulan pesan error untuk validasi
         return [
             'login.required' => 'Username atau email wajib diisi.',
             'login.string' => 'Format username atau email tidak valid.',
@@ -47,120 +43,101 @@ class LoginRequest extends FormRequest
         ];
     }
 
-    /**
-     * Attempt to authenticate the request's credentials
-     * Support login dengan username (field name) atau email
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
+    // Mencoba autentikasi berdasarkan kredensial
     public function authenticate(): void
     {
-        // Cek rate limiting terlebih dahulu
+        // Pastikan tidak melebihi batas percobaan login
         $this->ensureIsNotRateLimited();
 
+        // Ambil input login dan password
         $loginInput = $this->input('login');
         $password = $this->input('password');
 
-        // Tentukan apakah input login adalah email atau username
-        // Jika mengandung @ dan format email valid, anggap sebagai email
-        // Jika tidak, anggap sebagai username (field name di database)
+        // Cek apakah input login adalah email
         $isEmail = filter_var($loginInput, FILTER_VALIDATE_EMAIL);
         
+        // Siapkan kredensial berdasarkan jenis input
         if ($isEmail) {
-            // Login menggunakan email
+            // Gunakan email untuk login
             $credentials = [
                 'email' => $loginInput,
                 'password' => $password,
             ];
         } else {
-            // Login menggunakan username (field name)
+            // Gunakan username untuk login
             $credentials = [
                 'name' => $loginInput,
                 'password' => $password,
             ];
         }
 
-        // Attempt authentication dengan credentials yang sesuai
+        // Coba autentikasi dengan kredensial
         if (!Auth::attempt($credentials, $this->boolean('remember'))) {
-            // Jika gagal login, increment rate limiter
+            // Tambah hitungan gagal login ke rate limiter
             RateLimiter::hit($this->throttleKey());
 
-            // Throw validation exception dengan pesan error yang sesuai
+            // Lempar error validasi jika autentikasi gagal
             throw ValidationException::withMessages([
                 'login' => [
                     $isEmail 
-                        ? 'Email atau password yang Anda masukkan salah.' 
-                        : 'Username atau password yang Anda masukkan salah.'
+                        ? 'Email atau password salah.' 
+                        : 'Username atau password salah.'
                 ],
             ]);
         }
 
-        // Jika berhasil login, clear rate limiter
+        // Bersihkan rate limiter jika login berhasil
         RateLimiter::clear($this->throttleKey());
     }
 
-    /**
-     * Ensure the login request is not rate limited
-     * Mencegah brute force attack dengan rate limiting
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
+    // Cek apakah permintaan tidak dibatasi oleh rate limiter
     public function ensureIsNotRateLimited(): void
     {
-        // Cek apakah sudah mencapai limit maksimal percobaan login
+        // Cek apakah sudah melebihi batas percobaan (5 kali)
         if (!RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
             return;
         }
 
-        // Trigger event lockout
+        // Kirim event lockout
         event(new Lockout($this));
 
-        // Hitung berapa detik lagi bisa mencoba login
+        // Hitung waktu tunggu dalam detik
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
-        // Throw validation exception dengan pesan rate limit
+        // Lempar error jika terlalu banyak percobaan
         throw ValidationException::withMessages([
-            'login' => [
-                'Terlalu banyak percobaan login. Silakan coba lagi dalam ' . 
-                ceil($seconds / 60) . ' menit.'
-            ],
+            'login' => ['Terlalu banyak percobaan login. Coba lagi dalam ' . ceil($seconds / 60) . ' menit.'],
         ]);
     }
 
-    /**
-     * Get the rate limiting throttle key for the request
-     * Generate key unik untuk rate limiting berdasarkan input dan IP
-     */
+    // Generate kunci unik untuk rate limiting
     public function throttleKey(): string
     {
-        // Buat key unik berdasarkan input login dan IP address
-        // Transliterate untuk handle karakter khusus
+        // Buat kunci berdasarkan input login dan IP address
         return Str::transliterate(
             Str::lower($this->input('login')) . '|' . $this->ip()
         );
     }
 
-    /**
-     * Get the login username to be used by the controller
-     * Method untuk mendapatkan field name yang sesuai untuk database
-     */
+    // Ambil nama field login untuk database
     public function getLoginUsername(): string
     {
+        // Ambil input login
         $loginInput = $this->input('login');
         
-        // Return field name yang sesuai untuk database
+        // Kembalikan field email atau name berdasarkan input
         return filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
     }
 
-    /**
-     * Get the user instance for the given credentials
-     * Method untuk mendapatkan user berdasarkan credentials (nama method diubah untuk hindari konflik)
-     */
+    // Cari user berdasarkan kredensial
     public function findUserByCredentials(): ?User
     {
+        // Ambil input login
         $loginInput = $this->input('login');
+        // Cek apakah input adalah email
         $isEmail = filter_var($loginInput, FILTER_VALIDATE_EMAIL);
 
+        // Cari user berdasarkan email atau username
         if ($isEmail) {
             return User::where('email', $loginInput)->first();
         } else {
@@ -168,34 +145,29 @@ class LoginRequest extends FormRequest
         }
     }
 
-    /**
-     * Determine if the user exists in the database
-     * Method untuk cek apakah user ada di database
-     */
+    // Cek apakah user ada di database
     public function userExists(): bool
     {
+        // Kembalikan true jika user ditemukan
         return $this->findUserByCredentials() !== null;
     }
 
-    /**
-     * Check if the login input is an email
-     * Method untuk cek apakah input adalah email
-     */
+    // Cek apakah input login adalah email
     public function isEmailLogin(): bool
     {
+        // Kembalikan true jika input valid sebagai email
         return filter_var($this->input('login'), FILTER_VALIDATE_EMAIL) !== false;
     }
 
-    /**
-     * Get validation rules with custom logic
-     * Method untuk validasi tambahan jika diperlukan
-     */
+    // Validasi tambahan setelah aturan utama
     public function withValidator($validator): void
     {
+        // Tambahkan validasi kustom
         $validator->after(function ($validator) {
+            // Ambil input login
             $loginInput = $this->input('login');
             
-            // Validasi format email jika input mengandung @
+            // Validasi format email jika mengandung @
             if (str_contains($loginInput, '@') && !filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
                 $validator->errors()->add('login', 'Format email tidak valid.');
             }
@@ -212,16 +184,16 @@ class LoginRequest extends FormRequest
         });
     }
 
-    /**
-     * Get the credentials for authentication
-     * Method untuk mendapatkan credentials yang sesuai
-     */
+    // Ambil kredensial untuk autentikasi
     public function getCredentials(): array
     {
+        // Ambil input login dan password
         $loginInput = $this->input('login');
         $password = $this->input('password');
+        // Cek apakah input adalah email
         $isEmail = filter_var($loginInput, FILTER_VALIDATE_EMAIL);
         
+        // Kembalikan kredensial berdasarkan jenis input
         if ($isEmail) {
             return [
                 'email' => $loginInput,

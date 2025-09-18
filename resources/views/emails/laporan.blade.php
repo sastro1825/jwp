@@ -44,34 +44,46 @@
     </style>
 </head>
 <body>
-    {{-- Header Email diubah --}}
+    {{-- Bagian header email --}}
     <div class="header">
         <h1>Tukupedia</h1>
         <h2>Laporan Pembelian Anda</h2>
         <p>Toko Alat Kesehatan Online</p>
     </div>
 
-    {{-- Content Email --}}
+    {{-- Bagian konten utama email --}}
     <div class="content">
+        {{-- Menampilkan nama pelanggan --}}
         <h3>Halo {{ $customer->name }},</h3>
         
         <p>Terima kasih telah berbelanja di <strong>Tukupedia</strong>, toko alat kesehatan terpercaya online.</p>
         
         <p>Pembelian Anda telah berhasil diproses dan laporan detail transaksi telah dilampirkan dalam format PDF pada email ini.</p>
 
-        <div class="info-box">
+        {{-- Informasi detail transaksi --}}
+        <
+
+div class="info-box">
             <h4>Informasi Pembelian:</h4>
             <ul>
+                {{-- Menampilkan nomor transaksi --}}
                 <li><strong>No. Transaksi:</strong> {{ $transaksi->id }}</li>
-                {{-- Perbaikan format tanggal dengan timezone Indonesia --}}
+                {{-- Menampilkan tanggal pembelian dengan format Indonesia --}}
                 <li><strong>Tanggal Pembelian:</strong> {{ $transaksi->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') }} WIB</li>
+                {{-- Menampilkan nama pelanggan --}}
                 <li><strong>Customer:</strong> {{ $customer->name }}</li>
+                {{-- Menampilkan email pelanggan --}}
                 <li><strong>Email:</strong> {{ $customer->email }}</li>
-                <li><strong>Total Pembayaran:</strong> Rp {{ number_format($transaksi->total, 0, ',', '.') }}</li>
+                {{-- Menampilkan total pembayaran dengan format Rupiah --}}
+                <li><strong>Total Pembayaran …
+
+:</strong> Rp {{ number_format($transaksi->total, 0, ',', '.') }}</li>
+                {{-- Menampilkan metode pembayaran --}}
                 <li><strong>Metode Pembayaran:</strong> {{ $transaksi->metode_pembayaran == 'prepaid' ? 'Prepaid (Kartu/PayPal)' : 'COD (Cash On Delivery)' }}</li>
             </ul>
         </div>
 
+        {{-- Informasi langkah selanjutnya --}}
         <div class="info-box">
             <h4>Apa Selanjutnya?</h4>
             <ul>
@@ -86,7 +98,7 @@
         <ul>
             <li>Simpan laporan PDF ini sebagai bukti pembelian</li>
             <li>Untuk pembayaran postpaid, harap siapkan uang pas saat barang tiba</li>
-            <li>Hubungi customer service jika ada pertanyaan: fajarstudent28@gmail.com</li>
+            <li>Hubungi customer service jika ada pertanyaan: fbuquerquestudent28@gmail.com</li>
         </ul>
 
         <p>Jika ada pertanyaan atau kendala, jangan ragu untuk menghubungi tim customer service kami.</p>
@@ -97,8 +109,9 @@
         <strong>Tim Tukupedia</strong></p>
     </div>
 
-    {{-- Footer email --}}
+    {{-- Bagian footer email --}}
     <div style="margin-top: 30px; text-align: center; font-size: 10px;">
+        {{-- Menampilkan waktu pembuatan dokumen --}}
         <p>Dokumen dibuat otomatis pada {{ now()->setTimezone('Asia/Jakarta')->format('d/m/Y H:i:s') }} WIB</p>
         <p>Tukupedia | fajarstudent28@gmail.com</p>
     </div>

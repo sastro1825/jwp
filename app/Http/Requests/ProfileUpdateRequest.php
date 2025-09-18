@@ -1,18 +1,17 @@
 <?php
 
+// Menggunakan namespace untuk organisasi kode
 namespace App\Http\Requests;
 
+// Mengimpor model dan library yang diperlukan
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+// Kelas untuk validasi pembaruan profil pengguna
 class ProfileUpdateRequest extends FormRequest
 {
-    /**
-     * Get the validation rules that apply to the request - DIPERBAIKI: Validasi semua field profile
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+    // Menentukan aturan validasi untuk permintaan pembaruan profil
     public function rules(): array
     {
         return [
@@ -25,19 +24,16 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
-            // Tambahan validasi untuk field profile yang lain
-            'dob' => ['nullable', 'date', 'before:today'], // Tanggal lahir harus sebelum hari ini
-            'gender' => ['nullable', 'in:male,female'], // Gender hanya male atau female
-            'address' => ['nullable', 'string', 'max:500'], // Alamat maksimal 500 karakter
-            'city' => ['nullable', 'string', 'max:100'], // Kota maksimal 100 karakter
-            'contact_no' => ['nullable', 'string', 'max:20'], // No HP maksimal 20 karakter
-            'paypal_id' => ['nullable', 'string', 'max:100'], // PayPal ID maksimal 100 karakter
+            'dob' => ['nullable', 'date', 'before:today'],
+            'gender' => ['nullable', 'in:male,female'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'contact_no' => ['nullable', 'string', 'max:20'],
+            'paypal_id' => ['nullable', 'string', 'max:100'],
         ];
     }
 
-    /**
-     * Get custom messages for validator errors
-     */
+    // Menentukan pesan kustom untuk kesalahan validasi
     public function messages(): array
     {
         return [

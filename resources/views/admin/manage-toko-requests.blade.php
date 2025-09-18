@@ -1,15 +1,17 @@
 @extends('layouts.app')
 
+{{-- Bagian konten utama halaman --}}
 @section('content')
-{{-- Halaman Kelola Permohonan Toko --}}
+{{-- Halaman untuk mengelola permohonan pembukaan toko --}}
 <div class="container">
-    {{-- Tombol kembali ke dashboard dipindah ke atas --}}
+    {{-- Tombol kembali ke dashboard --}}
     <div class="mb-3">
         <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
         </a>
     </div>
 
+    {{-- Judul dan deskripsi halaman --}}
     <div class="row">
         <div class="col-12">
             <h1>Kelola Permohonan Toko</h1>
@@ -17,7 +19,7 @@
         </div>
     </div>
 
-    {{-- Alert Messages --}}
+    {{-- Notifikasi sukses jika ada --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -25,6 +27,7 @@
         </div>
     @endif
 
+    {{-- Notifikasi error jika ada --}}
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
@@ -32,8 +35,9 @@
         </div>
     @endif
 
-    {{-- Statistik Permohonan Toko --}}
+    {{-- Statistik permohonan toko dalam bentuk kartu --}}
     <div class="row mb-4">
+        {{-- Kartu untuk permohonan pending --}}
         <div class="col-md-3 mb-3">
             <div class="card bg-warning text-white">
                 <div class="card-body">
@@ -43,6 +47,7 @@
                 </div>
             </div>
         </div>
+        {{-- Kartu untuk permohonan disetujui --}}
         <div class="col-md-3 mb-3">
             <div class="card bg-success text-white">
                 <div class="card-body">
@@ -52,6 +57,7 @@
                 </div>
             </div>
         </div>
+        {{-- Kartu untuk permohonan ditolak --}}
         <div class="col-md-3 mb-3">
             <div class="card bg-danger text-white">
                 <div class="card-body">
@@ -61,6 +67,7 @@
                 </div>
             </div>
         </div>
+        {{-- Kartu untuk total permohonan --}}
         <div class="col-md-3 mb-3">
             <div class="card bg-info text-white">
                 <div class="card-body">
@@ -72,7 +79,7 @@
         </div>
     </div>
 
-    {{-- Tabel Permohonan Toko --}}
+    {{-- Tabel daftar permohonan toko --}}
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0">
@@ -80,6 +87,7 @@
             </h5>
         </div>
         <div class="card-body">
+            {{-- Cek apakah ada permohonan toko --}}
             @if($tokoRequests->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
@@ -95,6 +103,7 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {{-- Looping untuk menampilkan setiap permohonan toko --}}
                             @foreach($tokoRequests as $request)
                             <tr>
                                 <td>{{ $request->id }}</td>
@@ -112,6 +121,7 @@
                                     </span>
                                 </td>
                                 <td>
+                                    {{-- Menampilkan status permohonan dengan badge --}}
                                     @if($request->status === 'pending')
                                         <span class="badge bg-warning">Pending</span>
                                     @elseif($request->status === 'approved')
@@ -122,12 +132,14 @@
                                 </td>
                                 <td>{{ $request->created_at->format('d/m/Y H:i') }}</td>
                                 <td>
+                                    {{-- Tombol untuk melihat detail permohonan --}}
                                     <button type="button" class="btn btn-sm btn-info me-1" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#detailModal{{ $request->id }}"
                                             title="Lihat Detail">
                                         <i class="bi bi-eye"></i>
                                     </button>
+                                    {{-- Tombol untuk approve/reject jika status pending --}}
                                     @if($request->status === 'pending')
                                         <button type="button" class="btn btn-sm btn-success me-1" 
                                                 data-bs-toggle="modal" 
@@ -142,6 +154,7 @@
                                             <i class="bi bi-x-circle"></i>
                                         </button>
                                     @endif
+                                    {{-- Modal untuk menampilkan detail permohonan --}}
                                     <div class="modal fade" id="detailModal{{ $request->id }}" tabindex="-1">
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content">
@@ -181,6 +194,7 @@
                                                         </div>
                                                     </div>
                                                     <hr>
+                                                    {{-- Menampilkan deskripsi toko jika ada --}}
                                                     @if($request->deskripsi_toko)
                                                     <div class="row">
                                                         <div class="col-12">
@@ -203,6 +217,7 @@
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                                    {{-- Tombol approve/reject di modal detail jika status pending --}}
                                                     @if($request->status === 'pending')
                                                         <button type="button" class="btn btn-success" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#approveModal{{ $request->id }}">
                                                             <i class="bi bi-check-circle"></i> Approve
@@ -215,6 +230,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {{-- Modal untuk menyetujui permohonan --}}
                                     @if($request->status === 'pending')
                                         <div class="modal fade" id="approveModal{{ $request->id }}" tabindex="-1">
                                             <div class="modal-dialog">
@@ -256,6 +272,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        {{-- Modal untuk menolak permohonan --}}
                                         <div class="modal fade" id="rejectModal{{ $request->id }}" tabindex="-1">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
@@ -299,10 +316,12 @@
                         </tbody>
                     </table>
                 </div>
+                {{-- Menampilkan pagination untuk daftar permohonan --}}
                 <div class="mt-3">
                     {{ $tokoRequests->links() }}
                 </div>
             @else
+                {{-- Tampilan jika tidak ada permohonan toko --}}
                 <div class="text-center py-4">
                     <i class="bi bi-shop" style="font-size: 4rem; color: #ccc;"></i>
                     <h4 class="mt-3">Tidak Ada Permohonan</h4>

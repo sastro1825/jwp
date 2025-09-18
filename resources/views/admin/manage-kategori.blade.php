@@ -1,15 +1,17 @@
 @extends('layouts.app')
 
+{{-- Konten utama halaman --}}
 @section('content')
-{{-- Halaman Kelola Kategori dengan Dropdown Category Type --}}
+{{-- Halaman Kelola Kategori dengan form dan tabel --}}
 <div class="container">
-    {{-- Tombol kembali ke dashboard dipindah ke atas --}}
+    {{-- Tombol kembali ke dashboard --}}
     <div class="mb-3">
         <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
         </a>
     </div>
 
+    {{-- Judul dan deskripsi halaman --}}
     <div class="row">
         <div class="col-12">
             <h1>Kelola Kategori</h1>
@@ -17,7 +19,7 @@
         </div>
     </div>
 
-    {{-- Alert Messages --}}
+    {{-- Menampilkan pesan sukses jika ada --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -25,6 +27,7 @@
         </div>
     @endif
 
+    {{-- Menampilkan pesan error jika ada --}}
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
@@ -32,6 +35,7 @@
         </div>
     @endif
 
+    {{-- Menampilkan daftar error validasi jika ada --}}
     @if($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <strong>Terjadi kesalahan:</strong>
@@ -45,7 +49,7 @@
     @endif
 
     <div class="row">
-        {{-- Form Tambah Kategori --}}
+        {{-- Form untuk menambah kategori baru --}}
         <div class="col-md-5">
             <div class="card">
                 <div class="card-header">
@@ -54,10 +58,11 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    {{-- Form pengiriman data kategori --}}
                     <form action="{{ route('admin.kategori.store') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
+                        @csrf {{-- Token CSRF untuk keamanan form --}}
 
-                        {{-- Nama Kategori --}}
+                        {{-- Input nama kategori --}}
                         <div class="mb-3">
                             <label for="nama" class="form-label">Nama Kategori <span class="text-danger">*</span></label>
                             <input type="text" 
@@ -72,7 +77,7 @@
                             @enderror
                         </div>
 
-                        {{-- Jenis Kategori Kesehatan --}}
+                        {{-- Dropdown jenis kategori kesehatan --}}
                         <div class="mb-3">
                             <label for="category_type" class="form-label">Jenis Kategori <span class="text-danger">*</span></label>
                             <select id="category_type" 
@@ -94,7 +99,7 @@
                             <small class="form-text text-muted">Pilih jenis kategori produk kesehatan</small>
                         </div>
 
-                        {{-- Harga Kategori --}}
+                        {{-- Input harga patokan kategori --}}
                         <div class="mb-3">
                             <label for="harga" class="form-label">Harga Patokan <span class="text-danger">*</span></label>
                             <div class="input-group">
@@ -115,7 +120,7 @@
                             <small class="form-text text-muted">Harga patokan untuk kategori ini</small>
                         </div>
 
-                        {{-- Gambar Kategori --}}
+                        {{-- Input upload gambar kategori --}}
                         <div class="mb-3">
                             <label for="gambar" class="form-label">Gambar Kategori</label>
                             <input type="file" 
@@ -129,7 +134,7 @@
                             <small class="form-text text-muted">Format: JPEG, PNG, JPG, GIF (Max: 2MB)</small>
                         </div>
 
-                        {{-- Deskripsi Kategori --}}
+                        {{-- Input deskripsi kategori --}}
                         <div class="mb-3">
                             <label for="deskripsi" class="form-label">Deskripsi</label>
                             <textarea id="deskripsi" 
@@ -142,7 +147,7 @@
                             @enderror
                         </div>
 
-                        {{-- Tombol Submit --}}
+                        {{-- Tombol untuk submit form --}}
                         <button type="submit" class="btn btn-success w-100">
                             <i class="bi bi-check-circle"></i> Tambah Kategori
                         </button>
@@ -151,7 +156,7 @@
             </div>
         </div>
 
-        {{-- List Kategori --}}
+        {{-- Tabel daftar kategori --}}
         <div class="col-md-7">
             <div class="card">
                 <div class="card-header">
@@ -161,6 +166,7 @@
                 </div>
                 <div class="card-body">
                     @if($kategoris->count() > 0)
+                        {{-- Tabel responsif untuk menampilkan daftar kategori --}}
                         <div class="table-responsive">
                             <table class="table table-striped table-hover">
                                 <thead class="table-dark">
@@ -178,12 +184,14 @@
                                     <tr>
                                         <td>{{ $kategori->id }}</td>
                                         <td>
+                                            {{-- Menampilkan gambar kategori jika ada --}}
                                             @if($kategori->gambar)
                                                 <img src="{{ Storage::url($kategori->gambar) }}" 
                                                      alt="{{ $kategori->nama }}" 
                                                      class="img-thumbnail" 
                                                      style="width: 60px; height: 60px; object-fit: cover;">
                                             @else
+                                                {{-- Placeholder jika gambar tidak ada --}}
                                                 <div class="bg-light d-flex align-items-center justify-content-center" 
                                                      style="width: 60px; height: 60px; border: 1px solid #ddd;">
                                                     <i class="bi bi-image text-muted"></i>
@@ -195,24 +203,26 @@
                                             <small class="text-muted">{{ Str::limit($kategori->deskripsi ?? '-', 30) }}</small>
                                         </td>
                                         <td>
+                                            {{-- Menampilkan jenis kategori dalam badge --}}
                                             <span class="badge bg-info">
                                                 {{ $kategori->getCategoryTypeLabel() }}
                                             </span>
                                         </td>
                                         <td>
+                                            {{-- Menampilkan harga dalam format Rupiah --}}
                                             <span class="badge bg-success">
                                                 Rp {{ number_format($kategori->harga ?? 0, 0, ',', '.') }}
                                             </span>
                                         </td>
                                         <td>
-                                            {{-- Tombol Edit --}}
+                                            {{-- Tombol untuk edit kategori --}}
                                             <a href="{{ route('admin.kategori.edit', $kategori->id) }}" 
                                                class="btn btn-sm btn-warning me-1" 
                                                title="Edit Kategori">
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
                                             
-                                            {{-- Tombol Hapus --}}
+                                            {{-- Tombol untuk hapus kategori dengan modal konfirmasi --}}
                                             <button type="button" 
                                                     class="btn btn-sm btn-danger" 
                                                     data-bs-toggle="modal" 
@@ -221,7 +231,7 @@
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                             
-                                            {{-- Modal Konfirmasi Hapus --}}
+                                            {{-- Modal untuk konfirmasi hapus kategori --}}
                                             <div class="modal fade" id="deleteModal{{ $kategori->id }}" tabindex="-1">
                                                 <div class="modal-dialog">
                                                     <div class="modal-content">
@@ -238,6 +248,7 @@
                                                         </div>
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                                            {{-- Form untuk menghapus kategori --}}
                                                             <form action="{{ route('admin.kategori.delete', $kategori->id) }}" method="POST" class="d-inline">
                                                                 @csrf
                                                                 @method('DELETE')
@@ -254,12 +265,12 @@
                             </table>
                         </div>
 
-                        {{-- Pagination Links --}}
+                        {{-- Navigasi pagination untuk daftar kategori --}}
                         <div class="mt-3">
                             {{ $kategoris->links() }}
                         </div>
                     @else
-                        {{-- Tampilan jika tidak ada kategori --}}
+                        {{-- Tampilan jika tidak ada kategori tersedia --}}
                         <div class="text-center py-4">
                             <i class="bi bi-tags" style="font-size: 4rem; color: #ccc;"></i>
                             <h4 class="mt-3">Belum Ada Kategori</h4>

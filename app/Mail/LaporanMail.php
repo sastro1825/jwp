@@ -11,39 +11,47 @@ class LaporanMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $pdfPath; // Path file PDF laporan (bisa null)
-    public $transaksi; // Data transaksi untuk email
+    // Path file PDF laporan (bisa null)
+    public $pdfPath;
+    // Data transaksi untuk email
+    public $transaksi;
 
-    /**
-     * Create a new message instance - untuk kirim laporan PDF ke customer
-     * 
-     * @param string|null $pdfPath - Path ke file PDF laporan (bisa null jika PDF gagal generate)
-     * @param Transaksi $transaksi - Data transaksi customer
+    /** 
+     * Inisialisasi instance untuk kirim laporan PDF ke customer
+     * @param string|null $pdfPath Path ke file PDF laporan (bisa null jika PDF gagal generate)
+     * @param Transaksi $transaksi Data transaksi customer
      */
     public function __construct($pdfPath, Transaksi $transaksi)
     {
-        $this->pdfPath = $pdfPath; // Simpan path PDF untuk attachment (bisa null)
-        $this->transaksi = $transaksi; // Simpan data transaksi untuk template email
+        // Simpan path PDF untuk attachment (bisa null)
+        $this->pdfPath = $pdfPath;
+        // Simpan data transaksi untuk template email
+        $this->transaksi = $transaksi;
     }
 
-    /**
-     * Build the message - untuk email laporan pembelian menggunakan view yang sudah ada
-     * Mengirim email dengan attachment PDF laporan (jika ada)
+    /** 
+     * Membangun email laporan pembelian dengan view dan attachment PDF (jika ada)
+     * @return $this
      */
     public function build()
     {
+        // Siapkan email dengan subjek dan view
         $email = $this->subject('Laporan Pembelian Tukupedia - Transaksi #' . $this->transaksi->id)
-                      ->view('emails.laporan') // Gunakan view yang sudah ada
+                      ->view('emails.laporan') // Gunakan view 'emails.laporan'
                       ->with([
-                          'transaksi' => $this->transaksi, // Pass data transaksi ke view
-                          'customer' => $this->transaksi->user // Pass data customer ke view
+                          // Kirim data transaksi ke view
+                          'transaksi' => $this->transaksi,
+                          // Kirim data customer ke view
+                          'customer' => $this->transaksi->user
                       ]);
 
-        // Attach file PDF laporan jika file ada dan valid
+        // Tambahkan file PDF sebagai attachment jika file ada
         if ($this->pdfPath && file_exists($this->pdfPath)) {
             $email->attach($this->pdfPath, [
-                'as' => 'laporan-pembelian-' . $this->transaksi->id . '.pdf', // Nama file attachment
-                'mime' => 'application/pdf', // MIME type untuk PDF
+                // Nama file attachment
+                'as' => 'laporan-pembelian-' . $this->transaksi->id . '.pdf',
+                // MIME type untuk PDF
+                'mime' => 'application/pdf',
             ]);
         }
 

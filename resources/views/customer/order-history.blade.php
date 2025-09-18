@@ -1,20 +1,23 @@
 @extends('layouts.app')
 
+{{-- Memulai section konten --}}
 @section('content')
 <div class="container">
     <div class="row">
         <div class="col-12">
+            {{-- Judul halaman Riwayat Pesanan --}}
             <h1 class="mb-4">Riwayat Pesanan</h1>
             <p class="text-muted">
                 Lihat semua pesanan yang pernah Anda buat
                 @if(auth()->user()->role === 'pemilik_toko')
+                    {{-- Menampilkan badge untuk pemilik toko --}}
                     <span class="badge bg-success ms-2">Pemilik Toko</span>
                 @endif
             </p>
         </div>
     </div>
 
-    {{-- Alert Messages --}}
+    {{-- Menampilkan pesan sukses jika ada --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -22,7 +25,7 @@
         </div>
     @endif
 
-    {{-- Navigation Breadcrumb --}}
+    {{-- Navigasi breadcrumb untuk orientasi pengguna --}}
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
@@ -33,7 +36,7 @@
     </nav>
 
     @if($transaksis->count() > 0)
-        {{-- Daftar Transaksi dengan Detail Item --}}
+        {{-- Menampilkan daftar transaksi dengan detail item --}}
         <div class="row">
             @foreach($transaksis as $transaksi)
                 <div class="col-12 mb-4">
@@ -41,31 +44,37 @@
                         <div class="card-header">
                             <div class="row align-items-center">
                                 <div class="col-md-6">
+                                    {{-- Informasi pesanan dan status pengiriman --}}
                                     <h6 class="mb-0">
                                         <i class="bi bi-receipt"></i> 
                                         Pesanan #{{ $transaksi->id }}
-                                        {{-- Status Shipping --}}
                                         @if($transaksi->shippingOrder)
                                             @if($transaksi->shippingOrder->status === 'pending')
+                                                {{-- Status pengiriman menunggu --}}
                                                 <span class="badge bg-warning ms-2">Pending</span>
                                             @elseif($transaksi->shippingOrder->status === 'shipped')
+                                                {{-- Status pengiriman dikirim --}}
                                                 <span class="badge bg-info ms-2">Dikirim</span>
                                             @elseif($transaksi->shippingOrder->status === 'delivered')
+                                                {{-- Status pengiriman selesai --}}
                                                 <span class="badge bg-success ms-2">Delivered</span>
                                             @else
+                                                {{-- Status pengiriman dibatalkan --}}
                                                 <span class="badge bg-danger ms-2">Cancelled</span>
                                             @endif
                                         @else
+                                            {{-- Status transaksi umum --}}
                                             <span class="badge bg-secondary ms-2">{{ ucfirst($transaksi->status) }}</span>
                                         @endif
                                     </h6>
-                                    {{-- Format tanggal dengan timezone Indonesia --}}
+                                    {{-- Format tanggal transaksi ke zona waktu Indonesia --}}
                                     <small class="text-muted">{{ $transaksi->created_at->setTimezone('Asia/Jakarta')->format('d F Y, H:i') }} WIB</small>
                                 </div>
                                 <div class="col-md-6 text-end">
+                                    {{-- Total harga transaksi --}}
                                     <strong class="text-primary">Rp {{ number_format($transaksi->total, 0, ',', '.') }}</strong>
-                                    {{-- Tracking Number --}}
                                     @if($transaksi->shippingOrder && $transaksi->shippingOrder->tracking_number)
+                                        {{-- Nomor resi pengiriman --}}
                                         <br><small class="text-muted">{{ $transaksi->shippingOrder->tracking_number }}</small>
                                     @endif
                                 </div>
@@ -74,10 +83,10 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-8">
-                                    {{-- Detail Items yang Dibeli - DIPERBAIKI dengan gambar --}}
+                                    {{-- Menampilkan daftar barang yang dipesan --}}
                                     <h6>Barang yang Dipesan:</h6>
                                     @php
-                                        // Ambil detail transaksi yang sebenarnya dari database
+                                        // Mengambil detail transaksi dari database
                                         $detailItems = \App\Models\DetailTransaksi::where('transaksi_id', $transaksi->id)->get();
                                     @endphp
 
@@ -87,34 +96,37 @@
                                                 <div class="col-md-6 mb-3">
                                                     <div class="d-flex align-items-center">
                                                         <div class="me-3">
-                                                            {{-- Gambar berdasarkan tipe item --}}
                                                             @if($item->item_type === 'toko_kategori')
-                                                                {{-- Cari gambar dari toko kategori --}}
+                                                                {{-- Mengambil gambar dari toko kategori --}}
                                                                 @php
                                                                     $tokoKategori = \App\Models\TokoKategori::where('nama', explode(' (Toko:', $item->nama_item)[0])->first();
                                                                 @endphp
                                                                 @if($tokoKategori && $tokoKategori->gambar)
+                                                                    {{-- Menampilkan gambar toko kategori --}}
                                                                     <img src="{{ asset('storage/' . $tokoKategori->gambar) }}" 
                                                                          alt="{{ $item->nama_item }}" 
                                                                          class="rounded"
                                                                          style="width: 60px; height: 60px; object-fit: cover;">
                                                                 @else
+                                                                    {{-- Placeholder jika gambar tidak tersedia --}}
                                                                     <div class="bg-light rounded d-flex align-items-center justify-content-center" 
                                                                          style="width: 60px; height: 60px;">
                                                                         <i class="bi bi-shop text-success"></i>
                                                                     </div>
                                                                 @endif
                                                             @else
-                                                                {{-- Cari gambar dari kategori admin --}}
+                                                                {{-- Mengambil gambar dari kategori admin --}}
                                                                 @php
                                                                     $kategori = \App\Models\Kategori::where('nama', $item->nama_item)->first();
                                                                 @endphp
                                                                 @if($kategori && $kategori->gambar)
+                                                                    {{-- Menampilkan gambar kategori admin --}}
                                                                     <img src="{{ asset('storage/' . $kategori->gambar) }}" 
                                                                          alt="{{ $item->nama_item }}" 
                                                                          class="rounded"
                                                                          style="width: 60px; height: 60px; object-fit: cover;">
                                                                 @else
+                                                                    {{-- Placeholder jika gambar tidak tersedia --}}
                                                                     <div class="bg-light rounded d-flex align-items-center justify-content-center" 
                                                                          style="width: 60px; height: 60px;">
                                                                         <i class="bi bi-heart-pulse text-primary"></i>
@@ -123,11 +135,13 @@
                                                             @endif
                                                         </div>
                                                         <div>
+                                                            {{-- Nama dan detail item --}}
                                                             <h6 class="mb-1">{{ $item->nama_item }}</h6>
                                                             <span class="badge bg-{{ $item->item_type === 'toko_kategori' ? 'success' : 'info' }}">
                                                                 {{ $item->item_type === 'toko_kategori' ? 'Toko Mitra' : ucwords($item->item_type) }}
                                                             </span>
                                                             <br><small class="text-success">
+                                                                {{-- Perhitungan jumlah dan subtotal item --}}
                                                                 {{ $item->jumlah }}x Rp {{ number_format((float)$item->harga_item, 0, ',', '.') }} = 
                                                                 Rp {{ number_format((float)$item->subtotal_item, 0, ',', '.') }}
                                                             </small>
@@ -137,32 +151,35 @@
                                             @endforeach
                                         </div>
                                     @else
+                                        {{-- Pesan jika detail barang tidak tersedia --}}
                                         <div class="alert alert-info">
                                             <i class="bi bi-info-circle"></i>
                                             Detail barang tidak tersedia.
                                         </div>
                                     @endif
 
-                                    {{-- Detail Pesanan --}}
+                                    {{-- Menampilkan detail pesanan --}}
                                     <hr>
                                     <h6>Detail Pesanan:</h6>
                                     <p class="text-muted mb-1">
                                         <strong>Metode Pembayaran:</strong> {{ ucfirst($transaksi->metode_pembayaran) }}
                                     </p>
                                     @if($transaksi->alamat_pengiriman)
+                                        {{-- Menampilkan alamat pengiriman --}}
                                         <p class="text-muted mb-1">
                                             <strong>Alamat Pengiriman:</strong><br>
                                             {{ $transaksi->alamat_pengiriman }}
                                         </p>
                                     @endif
                                     @if($transaksi->catatan)
+                                        {{-- Menampilkan catatan pesanan --}}
                                         <p class="text-muted mb-0">
                                             <strong>Catatan:</strong> {{ $transaksi->catatan }}
                                         </p>
                                     @endif
                                 </div>
                                 <div class="col-md-4">
-                                    {{-- Info Pengiriman --}}
+                                    {{-- Informasi pengiriman jika ada --}}
                                     @if($transaksi->shippingOrder)
                                         <div class="card bg-light">
                                             <div class="card-body">
@@ -174,11 +191,13 @@
                                                     <strong>No. Resi:</strong> {{ $transaksi->shippingOrder->tracking_number }}
                                                 </p>
                                                 @if($transaksi->shippingOrder->shipped_date)
+                                                    {{-- Tanggal pengiriman --}}
                                                     <p class="mb-1">
                                                         <strong>Tanggal Kirim:</strong> {{ $transaksi->shippingOrder->shipped_date->format('d/m/Y') }}
                                                     </p>
                                                 @endif
                                                 @if($transaksi->shippingOrder->delivered_date)
+                                                    {{-- Tanggal sampai --}}
                                                     <p class="mb-1">
                                                         <strong>Tanggal Sampai:</strong> {{ $transaksi->shippingOrder->delivered_date->format('d/m/Y') }}
                                                     </p>
@@ -187,9 +206,10 @@
                                         </div>
                                     @endif
                                     
-                                    {{-- Action Buttons --}}
+                                    {{-- Tombol aksi untuk transaksi --}}
                                     <div class="text-end mt-3">
                                         @if($transaksi->status === 'pending')
+                                            {{-- Form untuk membatalkan pesanan --}}
                                             <form action="{{ 
                                                 auth()->user()->role === 'pemilik_toko' 
                                                     ? route('pemilik-toko.cancel.order', $transaksi->id) 
@@ -204,6 +224,7 @@
                                             </form>
                                         @endif
                                         
+                                        {{-- Tombol untuk mengunduh laporan --}}
                                         <a href="{{ 
                                             auth()->user()->role === 'pemilik_toko' 
                                                 ? route('pemilik-toko.download.laporan', $transaksi->id) 
@@ -220,12 +241,12 @@
             @endforeach
         </div>
 
-        {{-- Pagination --}}
+        {{-- Menampilkan pagination untuk daftar transaksi --}}
         <div class="mt-4">
             {{ $transaksis->links() }}
         </div>
     @else
-        {{-- Tidak ada pesanan --}}
+        {{-- Tampilan jika tidak ada pesanan --}}
         <div class="card">
             <div class="card-body text-center py-5">
                 <i class="bi bi-receipt" style="font-size: 5rem; color: #ccc;"></i>
@@ -238,17 +259,19 @@
         </div>
     @endif
 
-    {{-- Navigation Buttons --}}
+    {{-- Tombol navigasi ke halaman lain --}}
     <div class="mt-4">
         <a href="{{ route('customer.area') }}" class="btn btn-outline-primary">
             <i class="bi bi-arrow-left"></i> Kembali ke Customer Area
         </a>
         
         @if(auth()->user()->role === 'pemilik_toko')
+            {{-- Tombol keranjang untuk pemilik toko --}}
             <a href="{{ route('pemilik-toko.keranjang') }}" class="btn btn-outline-secondary ms-2">
                 <i class="bi bi-cart3"></i> Lihat Keranjang
             </a>
         @else
+            {{-- Tombol keranjang untuk customer --}}
             <a href="{{ route('customer.keranjang') }}" class="btn btn-outline-secondary ms-2">
                 <i class="bi bi-cart3"></i> Lihat Keranjang
             </a>

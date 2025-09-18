@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- Halaman Profile Management Customer --}}
+{{-- Halaman untuk mengelola profil dan riwayat transaksi pelanggan --}}
 <div class="container">
     <div class="row">
         <div class="col-12">
@@ -10,7 +10,7 @@
         </div>
     </div>
 
-    {{-- Alert Messages --}}
+    {{-- Menampilkan pesan sukses jika ada --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -18,6 +18,7 @@
         </div>
     @endif
 
+    {{-- Menampilkan pesan error jika ada --}}
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
@@ -25,6 +26,7 @@
         </div>
     @endif
 
+    {{-- Menampilkan daftar error validasi jika ada --}}
     @if($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <strong>Terjadi kesalahan:</strong>
@@ -38,7 +40,7 @@
     @endif
 
     <div class="row">
-        {{-- Informasi Akun (Kolom Kiri) --}}
+        {{-- Bagian informasi akun pengguna --}}
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
@@ -47,12 +49,13 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    {{-- Form untuk memperbarui data profil --}}
                     <form action="{{ route('profile.update') }}" method="POST">
                         @csrf
                         @method('PATCH')
 
                         <div class="row">
-                            {{-- Nama --}}
+                            {{-- Input untuk nama pengguna --}}
                             <div class="col-md-6 mb-3">
                                 <label for="name" class="form-label">Nama <span class="text-danger">*</span></label>
                                 <input type="text" 
@@ -66,7 +69,7 @@
                                 @enderror
                             </div>
 
-                            {{-- Email --}}
+                            {{-- Input untuk email pengguna --}}
                             <div class="col-md-6 mb-3">
                                 <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
                                 <input type="email" 
@@ -82,7 +85,7 @@
                         </div>
 
                         <div class="row">
-                            {{-- Tanggal Lahir --}}
+                            {{-- Input untuk tanggal lahir --}}
                             <div class="col-md-6 mb-3">
                                 <label for="dob" class="form-label">Tanggal Lahir</label>
                                 <input type="date" 
@@ -95,7 +98,7 @@
                                 @enderror
                             </div>
 
-                            {{-- Gender --}}
+                            {{-- Pilihan untuk jenis kelamin --}}
                             <div class="col-md-6 mb-3">
                                 <label for="gender" class="form-label">Gender</label>
                                 <select id="gender" 
@@ -111,7 +114,7 @@
                             </div>
                         </div>
 
-                        {{-- Alamat --}}
+                        {{-- Input untuk alamat lengkap --}}
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label for="address" class="form-label">Alamat</label>
@@ -127,7 +130,7 @@
                         </div>
 
                         <div class="row">
-                            {{-- Kota --}}
+                            {{-- Input untuk kota tempat tinggal --}}
                             <div class="col-md-6 mb-3">
                                 <label for="city" class="form-label">Kota</label>
                                 <input type="text" 
@@ -141,7 +144,7 @@
                                 @enderror
                             </div>
 
-                            {{-- No HP --}}
+                            {{-- Input untuk nomor telepon --}}
                             <div class="col-md-6 mb-3">
                                 <label for="contact_no" class="form-label">No. HP</label>
                                 <input type="text" 
@@ -156,8 +159,8 @@
                             </div>
                         </div>
 
-                        {{-- PayPal ID --}}
                         <div class="row">
+                            {{-- Input untuk ID PayPal --}}
                             <div class="col-md-6 mb-3">
                                 <label for="paypal_id" class="form-label">PayPal ID</label>
                                 <input type="text" 
@@ -171,7 +174,7 @@
                                 @enderror
                             </div>
 
-                            {{-- Info Bergabung --}}
+                            {{-- Informasi tanggal bergabung pengguna --}}
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Bergabung</label>
                                 <div class="form-control-plaintext">
@@ -181,7 +184,7 @@
                             </div>
                         </div>
 
-                        {{-- Tombol Update --}}
+                        {{-- Tombol untuk submit pembaruan profil --}}
                         <div class="text-end">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i> Update Profile
@@ -192,7 +195,7 @@
             </div>
         </div>
 
-        {{-- Quick Stats (Kolom Kanan) --}}
+        {{-- Bagian statistik cepat dan aksi tambahan --}}
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header">
@@ -202,13 +205,16 @@
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
+                        {{-- Menampilkan total transaksi pengguna --}}
                         <div class="col-6 mb-3">
                             <h4 class="text-primary">{{ $transaksis->total() }}</h4>
                             <small class="text-muted">Total Transaksi</small>
                         </div>
+                        {{-- Menampilkan total belanja pengguna --}}
                         <div class="col-6 mb-3">
                             <h4 class="text-success">
                                 @php
+                                    // Menghitung total belanja berdasarkan transaksi pengguna
                                     $totalSpent = \App\Models\Transaksi::where('user_id', $user->id)->sum('total');
                                 @endphp
                                 {{ $totalSpent > 0 ? 'Rp ' . number_format($totalSpent, 0, ',', '.') : 'Rp 0' }}
@@ -217,7 +223,7 @@
                         </div>
                     </div>
 
-                    {{-- Quick Action Buttons --}}
+                    {{-- Tombol aksi cepat --}}
                     <div class="d-grid gap-2">
                         <a href="{{ route('customer.order.history') }}" class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-clock-history"></i> Riwayat Pesanan
@@ -232,7 +238,7 @@
                 </div>
             </div>
 
-            {{-- Security Card --}}
+            {{-- Bagian pengaturan keamanan akun --}}
             <div class="card mt-3">
                 <div class="card-header">
                     <h6 class="mb-0">
@@ -251,7 +257,7 @@
         </div>
     </div>
 
-    {{-- Riwayat Transaksi Singkat --}}
+    {{-- Menampilkan riwayat transaksi terbaru jika ada --}}
     @if($transaksis->count() > 0)
     <div class="card mt-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -281,6 +287,7 @@
                             <td>{{ $transaksi->created_at->format('d/m/Y') }}</td>
                             <td>Rp {{ number_format($transaksi->total, 0, ',', '.') }}</td>
                             <td>
+                                {{-- Menampilkan status pengiriman berdasarkan data shippingOrder --}}
                                 @if($transaksi->shippingOrder)
                                     @if($transaksi->shippingOrder->status === 'pending')
                                         <span class="badge bg-warning">Pending</span>
@@ -296,6 +303,7 @@
                                 @endif
                             </td>
                             <td>
+                                {{-- Tombol untuk download laporan transaksi jika tersedia --}}
                                 @if($transaksi->pdf_path)
                                     <a href="{{ route('customer.download.laporan', $transaksi->id) }}" 
                                        class="btn btn-xs btn-outline-primary" 
@@ -314,7 +322,7 @@
     @endif
 </div>
 
-{{-- Modal Change Password --}}
+{{-- Modal untuk fitur ganti password --}}
 <div class="modal fade" id="changePasswordModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -339,7 +347,7 @@
 
 @push('scripts')
 <script>
-// Auto-hide alerts after 5 seconds
+// Menyembunyikan alert secara otomatis setelah 5 detik
 document.addEventListener('DOMContentLoaded', function() {
     const alerts = document.querySelectorAll('.alert-dismissible');
     alerts.forEach(alert => {

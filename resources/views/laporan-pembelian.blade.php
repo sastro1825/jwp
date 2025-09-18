@@ -46,19 +46,20 @@
     </style>
 </head>
 <body>
+    {{-- Header laporan dengan nama perusahaan dan deskripsi --}}
     <div class="header">
         <div class="company-name">Tukupedia - Laporan Belanja Anda</div>
         <div>Toko Alat Kesehatan Online</div>
     </div>
     
-    {{-- Informasi Customer --}}
-    <p><strong>User ID:</strong> {{ $user->id }}</p>
-    <p><strong>Nama:</strong> {{ $user->name }}</p>
-    <p><strong>Email:</strong> {{ $user->email }}</p>
-    <p><strong>Tanggal:</strong> {{ $transaksi->created_at->format('d/m/Y H:i') }}</p>
-    <p><strong>No. Transaksi:</strong> {{ $transaksi->id }}</p>
+    {{-- Informasi data pelanggan --}}
+    <p><strong>User ID:</strong> {{ $user->id }} {{-- ID unik pengguna --}}</p>
+    <p><strong>Nama:</strong> {{ $user->name }} {{-- Nama lengkap pengguna --}}</p>
+    <p><strong>Email:</strong> {{ $user->email }} {{-- Email pengguna --}}</p>
+    <p><strong>Tanggal:</strong> {{ $transaksi->created_at->format('d/m/Y H:i') }} {{-- Tanggal dan waktu transaksi --}}</p>
+    <p><strong>No. Transaksi:</strong> {{ $transaksi->id }} {{-- ID transaksi --}}</p>
     
-    {{-- Tabel Item Pembelian dengan data yang benar --}}
+    {{-- Tabel daftar item pembelian --}}
     <table>
         <tr>
             <th>No</th>
@@ -69,69 +70,66 @@
             <th>Harga</th>
             <th>Subtotal</th>
         </tr>
-        @foreach($items as $key => $item)
+        @foreach($items as $key => $item) {{-- Looping untuk setiap item pembelian --}}
         <tr>
-            <td>{{ $key + 1 }}</td>
-            {{-- Perbaikan nama item --}}
-            <td>{{ $item->nama_item ?? 'Item tidak diketahui' }}</td>
+            <td>{{ $key + 1 }} {{-- Nomor urut item --}}</td>
+            <td>{{ $item->nama_item ?? 'Item tidak diketahui' }} {{-- Nama item, default jika kosong --}}</td>
             <td>
-                {{-- Perbaikan ID/Kode berdasarkan tipe item --}}
-                @if($item->item_type === 'kategori')
-                    KAT-{{ $loop->index + 1 }}
-                @elseif($item->item_type === 'toko_kategori')
-                    TOKO-{{ $loop->index + 1 }}
+                @if($item->item_type === 'kategori') {{-- Kondisi untuk tipe kategori --}}
+                    KAT-{{ $loop->index + 1 }} {{-- Kode untuk kategori admin --}}
+                @elseif($item->item_type === 'toko_kategori') {{-- Kondisi untuk tipe toko kategori --}}
+                    TOKO-{{ $loop->index + 1 }} {{-- Kode untuk kategori toko --}}
                 @else
-                    PROD-{{ $loop->index + 1 }}
+                    PROD-{{ $loop->index + 1 }} {{-- Kode untuk produk biasa --}}
                 @endif
             </td>
             <td>
-                {{-- Perbaikan tipe item --}}
-                @if($item->item_type === 'kategori')
+                @if($item->item_type === 'kategori') {{-- Kondisi untuk menampilkan tipe kategori admin --}}
                     Kategori Admin
-                @elseif($item->item_type === 'toko_kategori')
+                @elseif($item->item_type === 'toko_kategori') {{-- Kondisi untuk menampilkan tipe kategori toko --}}
                     Kategori Toko
                 @else
-                    Produk
+                    Produk {{-- Tipe default untuk produk --}}
                 @endif
             </td>
-            <td class="text-right">{{ $item->jumlah ?? 1 }}</td>
-            <td class="text-right">Rp. {{ number_format((float)($item->harga_item ?? 0), 0, ',', '.') }}</td>
-            <td class="text-right">Rp. {{ number_format((float)($item->subtotal_item ?? 0), 0, ',', '.') }}</td>
+            <td class="text-right">{{ $item->jumlah ?? 1 }} {{-- Jumlah item, default 1 jika kosong --}}</td>
+            <td class="text-right">Rp. {{ number_format((float)($item->harga_item ?? 0), 0, ',', '.') }} {{-- Harga per item dalam format rupiah --}}</td>
+            <td class="text-right">Rp. {{ number_format((float)($item->subtotal_item ?? 0), 0, ',', '.') }} {{-- Subtotal item dalam format rupiah --}}</td>
         </tr>
         @endforeach
         
-        {{-- Baris Total --}}
+        {{-- Baris total pembelian --}}
         <tr class="total-row">
             <td colspan="6" class="text-right"><strong>TOTAL:</strong></td>
-            <td class="text-right"><strong>Rp. {{ number_format((float)$total, 0, ',', '.') }}</strong></td>
+            <td class="text-right"><strong>Rp. {{ number_format((float)$total, 0, ',', '.') }} {{-- Total harga dalam format rupiah --}}</strong></td>
         </tr>
     </table>
     
-    {{-- Informasi Pembayaran --}}
-    <p><strong>Cara Bayar:</strong> {{ $transaksi->metode_pembayaran == 'prepaid' ? 'Prepaid (Kartu/PayPal)' : 'Postpaid (COD)' }}</p>
-    <p><strong>Status:</strong> {{ ucfirst($transaksi->status) }}</p>
+    {{-- Informasi metode pembayaran dan status transaksi --}}
+    <p><strong>Cara Bayar:</strong> {{ $transaksi->metode_pembayaran == 'prepaid' ? 'Prepaid (Kartu/PayPal)' : 'Postpaid (COD)' }} {{-- Menampilkan metode pembayaran --}}</p>
+    <p><strong>Status:</strong> {{ ucfirst($transaksi->status) }} {{-- Status transaksi dengan huruf kapital di awal --}}</p>
     
-    {{-- Catatan Penting --}}
+    {{-- Catatan penting untuk pelanggan --}}
     <div style="margin-top: 30px;">
         <h4>Catatan Penting:</h4>
         <ul>
-            <li>Simpan laporan ini sebagai bukti pembelian yang sah</li>
-            <li>Untuk pembayaran postpaid, siapkan uang pas saat barang tiba</li>
-            <li>Barang akan diproses dalam 1-2 hari kerja</li>
-            <li>Hubungi customer service: fajarstudent28@gmail.com</li>
+            <li>Simpan laporan ini sebagai bukti pembelian yang sah {{-- Petunjuk menyimpan laporan --}}</li>
+            <li>Untuk pembayaran postpaid, siapkan uang pas saat barang tiba {{-- Petunjuk untuk pembayaran COD --}}</li>
+            <li>Barang akan diproses dalam 1-2 hari kerja {{-- Informasi waktu proses barang --}}</li>
+            <li>Hubungi customer service: fajarstudent28@gmail.com {{-- Kontak layanan pelanggan --}}</li>
         </ul>
     </div>
     
-    {{-- Tanda Tangan --}}
+    {{-- Kolom tanda tangan --}}
     <div style="margin-top: 40px;">
-        <p><strong>Tanda Tangan Toko:</strong> ________________</p>
-        <p><strong>Tanda Tangan Customer:</strong> ________________</p>
+        <p><strong>Tanda Tangan Toko:</strong> ________________ {{-- Tempat tanda tangan toko --}}</p>
+        <p><strong>Tanda Tangan Customer:</strong> ________________ {{-- Tempat tanda tangan pelanggan --}}</p>
     </div>
     
-    {{-- Footer PDF --}}
+    {{-- Footer dokumen PDF --}}
     <div style="margin-top: 30px; text-align: center; font-size: 10px;">
-        <p>Dokumen dibuat otomatis pada {{ now()->format('d/m/Y H:i:s') }}</p>
-        <p>Tukupedia | fajarstudent28@gmail.com</p>
+        <p>Dokumen dibuat otomatis pada {{ now()->format('d/m/Y H:i:s') }} {{-- Waktu pembuatan dokumen --}}</p>
+        <p>Tukupedia | fajarstudent28@gmail.com {{-- Informasi kontak perusahaan --}}</p>
     </div>
 </body>
 </html>

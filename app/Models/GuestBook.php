@@ -5,53 +5,47 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+// Kelas untuk mengelola data buku tamu
 class GuestBook extends Model
 {
     use HasFactory;
 
+    // Atribut yang dapat diisi secara massal
     protected $fillable = [
         'name',
-        'email', 
-        'message',
+        'email',
+        'message', 
         'status',
-        'user_id', // Tambahan untuk customer feedback
+        'user_id', 
     ];
 
-    /**
-     * Relationship dengan User untuk customer feedback
-     */
+    // Relasi dengan model User untuk customer feedback
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Cek apakah feedback dari visitor atau customer
-     */
+    // Cek apakah feedback berasal dari customer
     public function isFromCustomer()
     {
-        return !is_null($this->user_id);
+        return !is_null($this->user_id); // Mengembalikan true jika user_id tidak null
     }
 
-    /**
-     * Get nama pengirim feedback
-     */
+    // Mendapatkan nama pengirim feedback
     public function getSenderName()
     {
-        if ($this->isFromCustomer() && $this->user) {
-            return $this->user->name;
+        if ($this->isFromCustomer() && $this->user) { // Jika feedback dari customer dan user ada
+            return $this->user->name; // Kembalikan nama user
         }
-        return $this->name;
+        return $this->name; // Kembalikan nama dari atribut name
     }
 
-    /**
-     * Get email pengirim feedback
-     */
+    // Mendapatkan email pengirim feedback
     public function getSenderEmail()
     {
-        if ($this->isFromCustomer() && $this->user) {
-            return $this->user->email;
+        if ($this->isFromCustomer() && $this->user) { // Jika feedback dari customer dan user ada
+            return $this->user->email; // Kembalikan email user
         }
-        return $this->email;
+        return $this->email; // Kembalikan email dari atribut email
     }
 }

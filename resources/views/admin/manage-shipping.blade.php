@@ -1,9 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
-{{-- Halaman Kelola Shipping Orders - DIPERBAIKI --}}
+{{-- Konten utama halaman kelola pengiriman --}}
 <div class="container">
-    {{-- Tombol kembali ke dashboard dipindah ke atas --}}
+    {{-- Tombol kembali ke dashboard --}}
     <div class="mb-3">
         <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
@@ -17,7 +17,7 @@
         </div>
     </div>
 
-    {{-- Alert Messages --}}
+    {{-- Menampilkan pesan sukses jika ada --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -25,6 +25,7 @@
         </div>
     @endif
 
+    {{-- Menampilkan pesan error jika ada --}}
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
@@ -32,6 +33,7 @@
         </div>
     @endif
 
+    {{-- Menampilkan daftar error validasi jika ada --}}
     @if($errors->any())
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <strong>Terjadi kesalahan:</strong>
@@ -44,13 +46,13 @@
         </div>
     @endif
 
-    {{-- Statistik Shipping --}}
+    {{-- Statistik jumlah pengiriman berdasarkan status --}}
     <div class="row mb-4">
         <div class="col-md-3 mb-3">
             <div class="card bg-warning text-white">
                 <div class="card-body">
                     <h5>Pending</h5>
-                    <h2>{{ $shippingOrders->where('status', 'pending')->count() }}</h2>
+                    <h2>{{ $shippingOrders->where('status', 'pending')->count() }}</h2> {{-- Jumlah pengiriman berstatus pending --}}
                     <small>Belum dikirim</small>
                 </div>
             </div>
@@ -59,7 +61,7 @@
             <div class="card bg-info text-white">
                 <div class="card-body">
                     <h5>Shipped</h5>
-                    <h2>{{ $shippingOrders->where('status', 'shipped')->count() }}</h2>
+                    <h2>{{ $shippingOrders->where('status', 'shipped')->count() }}</h2> {{-- Jumlah pengiriman berstatus shipped --}}
                     <small>Dalam perjalanan</small>
                 </div>
             </div>
@@ -68,7 +70,7 @@
             <div class="card bg-success text-white">
                 <div class="card-body">
                     <h5>Delivered</h5>
-                    <h2>{{ $shippingOrders->where('status', 'delivered')->count() }}</h2>
+                    <h2>{{ $shippingOrders->where('status', 'delivered')->count() }}</h2> {{-- Jumlah pengiriman berstatus delivered --}}
                     <small>Sudah sampai</small>
                 </div>
             </div>
@@ -77,18 +79,18 @@
             <div class="card bg-danger text-white">
                 <div class="card-body">
                     <h5>Cancelled</h5>
-                    <h2>{{ $shippingOrders->where('status', 'cancelled')->count() }}</h2>
+                    <h2>{{ $shippingOrders->where('status', 'cancelled')->count() }}</h2> {{-- Jumlah pengiriman berstatus cancelled --}}
                     <small>Dibatalkan</small>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Tabel Shipping Orders --}}
+    {{-- Tabel daftar pengiriman --}}
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
-                <i class="bi bi-truck"></i> Daftar Pengiriman ({{ $shippingOrders->total() }} total)
+                <i class="bi bi-truck"></i> Daftar Pengiriman ({{ $shippingOrders->total() }} total) {{-- Total jumlah pengiriman --}}
             </h5>
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createShippingModal">
                 <i class="bi bi-plus-circle"></i> Buat Shipping Order
@@ -100,53 +102,53 @@
                     <table class="table table-striped table-hover">
                         <thead class="table-dark">
                             <tr>
-                                <th>ID</th>
-                                <th>Customer</th>
-                                <th>Transaksi</th>
-                                <th>No. Resi</th>
-                                <th>Kurir</th>
-                                <th>Status</th>
-                                <th>Tanggal Kirim</th>
-                                <th>Aksi</th>
+                                <th>ID</th> {{-- Kolom ID pengiriman --}}
+                                <th>Customer</th> {{-- Kolom data customer --}}
+                                <th>Transaksi</th> {{-- Kolom data transaksi --}}
+                                <th>No. Resi</th> {{-- Kolom nomor resi pengiriman --}}
+                                <th>Kurir</th> {{-- Kolom nama kurir --}}
+                                <th>Status</th> {{-- Kolom status pengiriman --}}
+                                <th>Tanggal Kirim</th> {{-- Kolom tanggal pengiriman --}}
+                                <th>Aksi</th> {{-- Kolom aksi (edit/view) --}}
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($shippingOrders as $shipping)
                             <tr>
-                                <td>{{ $shipping->id }}</td>
+                                <td>{{ $shipping->id }}</td> {{-- ID pengiriman --}}
                                 <td>
-                                    <strong>{{ $shipping->transaksi->user->name }}</strong><br>
-                                    <small class="text-muted">{{ $shipping->transaksi->user->email }}</small>
+                                    <strong>{{ $shipping->transaksi->user->name }}</strong><br> {{-- Nama customer --}}
+                                    <small class="text-muted">{{ $shipping->transaksi->user->email }}</small> {{-- Email customer --}}
                                 </td>
                                 <td>
-                                    <span class="badge bg-secondary">ID: {{ $shipping->transaksi->id }}</span><br>
-                                    <small>Rp {{ number_format($shipping->transaksi->total, 0, ',', '.') }}</small><br>
-                                    <small class="text-muted">{{ $shipping->transaksi->created_at->format('d/m/Y') }}</small>
+                                    <span class="badge bg-secondary">ID: {{ $shipping->transaksi->id }}</span><br> {{-- ID transaksi --}}
+                                    <small>Rp {{ number_format($shipping->transaksi->total, 0, ',', '.') }}</small><br> {{-- Total transaksi --}}
+                                    <small class="text-muted">{{ $shipping->transaksi->created_at->format('d/m/Y') }}</small> {{-- Tanggal transaksi --}}
                                 </td>
                                 <td>
-                                    <strong>{{ $shipping->tracking_number }}</strong>
+                                    <strong>{{ $shipping->tracking_number }}</strong> {{-- Nomor resi pengiriman --}}
                                 </td>
                                 <td>
                                     @if($shipping->courier)
-                                        {{ $shipping->courier }}
+                                        {{ $shipping->courier }} {{-- Nama kurir jika ada --}}
                                     @else
-                                        <span class="text-muted">-</span>
+                                        <span class="text-muted">-</span> {{-- Tanda jika kurir belum dipilih --}}
                                     @endif
                                 </td>
                                 <td>
                                     @if($shipping->status === 'pending')
-                                        <span class="badge bg-warning">Pending</span>
+                                        <span class="badge bg-warning">Pending</span> {{-- Status pengiriman pending --}}
                                     @elseif($shipping->status === 'shipped')
-                                        <span class="badge bg-info">Shipped</span>
+                                        <span class="badge bg-info">Shipped</span> {{-- Status pengiriman shipped --}}
                                     @elseif($shipping->status === 'delivered')
-                                        <span class="badge bg-success">Delivered</span>
+                                        <span class="badge bg-success">Delivered</span> {{-- Status pengiriman delivered --}}
                                     @else
-                                        <span class="badge bg-danger">Cancelled</span>
+                                        <span class="badge bg-danger">Cancelled</span> {{-- Status pengiriman cancelled --}}
                                     @endif
                                 </td>
-                                <td>{{ $shipping->shipped_date ? $shipping->shipped_date->format('d/m/Y') : '-' }}</td>
+                                <td>{{ $shipping->shipped_date ? $shipping->shipped_date->format('d/m/Y') : '-' }}</td> {{-- Tanggal pengiriman atau tanda jika belum ada --}}
                                 <td>
-                                    {{-- Tombol Update Status --}}
+                                    {{-- Tombol untuk membuka modal update status --}}
                                     <button type="button" class="btn btn-sm btn-warning me-1" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#updateModal{{ $shipping->id }}"
@@ -154,7 +156,7 @@
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
 
-                                    {{-- Tombol View Detail --}}
+                                    {{-- Tombol untuk membuka modal detail pengiriman --}}
                                     <button type="button" class="btn btn-sm btn-info" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#viewModal{{ $shipping->id }}"
@@ -162,7 +164,7 @@
                                         <i class="bi bi-eye"></i>
                                     </button>
 
-                                    {{-- Modal Update Status - DIPERBAIKI --}}
+                                    {{-- Modal untuk mengupdate status pengiriman --}}
                                     <div class="modal fade" id="updateModal{{ $shipping->id }}" tabindex="-1">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
@@ -174,7 +176,7 @@
                                                     @csrf
                                                     @method('PATCH')
                                                     <div class="modal-body">
-                                                        {{-- Status --}}
+                                                        {{-- Pilihan status pengiriman --}}
                                                         <div class="mb-3">
                                                             <label for="status{{ $shipping->id }}" class="form-label">Status <span class="text-danger">*</span></label>
                                                             <select id="status{{ $shipping->id }}" name="status" class="form-control" required>
@@ -185,7 +187,7 @@
                                                             </select>
                                                         </div>
 
-                                                        {{-- Dropdown kurir yang benar --}}
+                                                        {{-- Pilihan kurir pengiriman --}}
                                                         <div class="mb-3">
                                                             <label for="courier{{ $shipping->id }}" class="form-label">Kurir</label>
                                                             <select id="courier{{ $shipping->id }}" name="courier" class="form-control">
@@ -201,7 +203,7 @@
                                                             </select>
                                                         </div>
 
-                                                        {{-- Tanggal Kirim --}}
+                                                        {{-- Input tanggal pengiriman --}}
                                                         <div class="mb-3">
                                                             <label for="shipped_date{{ $shipping->id }}" class="form-label">Tanggal Kirim</label>
                                                             <input type="date" 
@@ -211,7 +213,7 @@
                                                                    value="{{ $shipping->shipped_date ? $shipping->shipped_date->format('Y-m-d') : '' }}">
                                                         </div>
 
-                                                        {{-- Tanggal Sampai --}}
+                                                        {{-- Input tanggal sampai --}}
                                                         <div class="mb-3">
                                                             <label for="delivered_date{{ $shipping->id }}" class="form-label">Tanggal Sampai</label>
                                                             <input type="date" 
@@ -221,7 +223,7 @@
                                                                    value="{{ $shipping->delivered_date ? $shipping->delivered_date->format('Y-m-d') : '' }}">
                                                         </div>
 
-                                                        {{-- Catatan --}}
+                                                        {{-- Input catatan pengiriman --}}
                                                         <div class="mb-3">
                                                             <label for="notes{{ $shipping->id }}" class="form-label">Catatan</label>
                                                             <textarea id="notes{{ $shipping->id }}" 
@@ -241,7 +243,7 @@
                                         </div>
                                     </div>
 
-                                    {{-- Modal View Detail --}}
+                                    {{-- Modal untuk menampilkan detail pengiriman --}}
                                     <div class="modal fade" id="viewModal{{ $shipping->id }}" tabindex="-1">
                                         <div class="modal-dialog modal-lg">
                                             <div class="modal-content">
@@ -251,26 +253,26 @@
                                                 </div>
                                                 <div class="modal-body">
                                                     <div class="row">
-                                                        {{-- Info Customer --}}
+                                                        {{-- Informasi data customer --}}
                                                         <div class="col-md-6">
                                                             <h6>Informasi Customer</h6>
                                                             <table class="table table-sm table-borderless">
-                                                                <tr><td><strong>Nama:</strong></td><td>{{ $shipping->transaksi->user->name }}</td></tr>
-                                                                <tr><td><strong>Email:</strong></td><td>{{ $shipping->transaksi->user->email }}</td></tr>
-                                                                <tr><td><strong>Alamat:</strong></td><td>{{ $shipping->transaksi->user->address ?? '-' }}</td></tr>
-                                                                <tr><td><strong>Kota:</strong></td><td>{{ $shipping->transaksi->user->city ?? '-' }}</td></tr>
-                                                                <tr><td><strong>No. HP:</strong></td><td>{{ $shipping->transaksi->user->contact_no ?? '-' }}</td></tr>
+                                                                <tr><td><strong>Nama:</strong></td><td>{{ $shipping->transaksi->user->name }}</td></tr> {{-- Nama customer --}}
+                                                                <tr><td><strong>Email:</strong></td><td>{{ $shipping->transaksi->user->email }}</td></tr> {{-- Email customer --}}
+                                                                <tr><td><strong>Alamat:</strong></td><td>{{ $shipping->transaksi->user->address ?? '-' }}</td></tr> {{-- Alamat customer --}}
+                                                                <tr><td><strong>Kota:</strong></td><td>{{ $shipping->transaksi->user->city ?? '-' }}</td></tr> {{-- Kota customer --}}
+                                                                <tr><td><strong>No. HP:</strong></td><td>{{ $shipping->transaksi->user->contact_no ?? '-' }}</td></tr> {{-- Nomor telepon customer --}}
                                                             </table>
                                                         </div>
 
-                                                        {{-- Info Transaksi --}}
+                                                        {{-- Informasi data transaksi --}}
                                                         <div class="col-md-6">
                                                             <h6>Informasi Transaksi</h6>
                                                             <table class="table table-sm table-borderless">
-                                                                <tr><td><strong>ID Transaksi:</strong></td><td>{{ $shipping->transaksi->id }}</td></tr>
-                                                                <tr><td><strong>Total:</strong></td><td>Rp {{ number_format($shipping->transaksi->total, 0, ',', '.') }}</td></tr>
-                                                                <tr><td><strong>Pembayaran:</strong></td><td>{{ ucfirst($shipping->transaksi->metode_pembayaran) }}</td></tr>
-                                                                <tr><td><strong>Tanggal Order:</strong></td><td>{{ $shipping->transaksi->created_at->format('d/m/Y H:i') }}</td></tr>
+                                                                <tr><td><strong>ID Transaksi:</strong></td><td>{{ $shipping->transaksi->id }}</td></tr> {{-- ID transaksi --}}
+                                                                <tr><td><strong>Total:</strong></td><td>Rp {{ number_format($shipping->transaksi->total, 0, ',', '.') }}</td></tr> {{-- Total transaksi --}}
+                                                                <tr><td><strong>Pembayaran:</strong></td><td>{{ ucfirst($shipping->transaksi->metode_pembayaran) }}</td></tr> {{-- Metode pembayaran --}}
+                                                                <tr><td><strong>Tanggal Order:</strong></td><td>{{ $shipping->transaksi->created_at->format('d/m/Y H:i') }}</td></tr> {{-- Tanggal order --}}
                                                             </table>
                                                         </div>
                                                     </div>
@@ -278,28 +280,28 @@
                                                     <hr>
 
                                                     <div class="row">
-                                                        {{-- Info Shipping --}}
+                                                        {{-- Informasi data pengiriman --}}
                                                         <div class="col-md-12">
                                                             <h6>Informasi Pengiriman</h6>
                                                             <table class="table table-sm">
-                                                                <tr><td><strong>No. Resi:</strong></td><td>{{ $shipping->tracking_number }}</td></tr>
-                                                                <tr><td><strong>Kurir:</strong></td><td>{{ $shipping->courier ?? '-' }}</td></tr>
+                                                                <tr><td><strong>No. Resi:</strong></td><td>{{ $shipping->tracking_number }}</td></tr> {{-- Nomor resi pengiriman --}}
+                                                                <tr><td><strong>Kurir:</strong></td><td>{{ $shipping->courier ?? '-' }}</td></tr> {{-- Nama kurir --}}
                                                                 <tr><td><strong>Status:</strong></td>
                                                                     <td>
                                                                         @if($shipping->status === 'pending')
-                                                                            <span class="badge bg-warning">Pending</span>
+                                                                            <span class="badge bg-warning">Pending</span> {{-- Status pengiriman pending --}}
                                                                         @elseif($shipping->status === 'shipped')
-                                                                            <span class="badge bg-info">Shipped</span>
+                                                                            <span class="badge bg-info">Shipped</span> {{-- Status pengiriman shipped --}}
                                                                         @elseif($shipping->status === 'delivered')
-                                                                            <span class="badge bg-success">Delivered</span>
+                                                                            <span class="badge bg-success">Delivered</span> {{-- Status pengiriman delivered --}}
                                                                         @else
-                                                                            <span class="badge bg-danger">Cancelled</span>
+                                                                            <span class="badge bg-danger">Cancelled</span> {{-- Status pengiriman cancelled --}}
                                                                         @endif
                                                                     </td>
                                                                 </tr>
-                                                                <tr><td><strong>Tanggal Kirim:</strong></td><td>{{ $shipping->shipped_date ? $shipping->shipped_date->format('d/m/Y') : '-' }}</td></tr>
-                                                                <tr><td><strong>Tanggal Sampai:</strong></td><td>{{ $shipping->delivered_date ? $shipping->delivered_date->format('d/m/Y') : '-' }}</td></tr>
-                                                                <tr><td><strong>Catatan:</strong></td><td>{{ $shipping->notes ?? '-' }}</td></tr>
+                                                                <tr><td><strong>Tanggal Kirim:</strong></td><td>{{ $shipping->shipped_date ? $shipping->shipped_date->format('d/m/Y') : '-' }}</td></tr> {{-- Tanggal pengiriman --}}
+                                                                <tr><td><strong>Tanggal Sampai:</strong></td><td>{{ $shipping->delivered_date ? $shipping->delivered_date->format('d/m/Y') : '-' }}</td></tr> {{-- Tanggal sampai --}}
+                                                                <tr><td><strong>Catatan:</strong></td><td>{{ $shipping->notes ?? '-' }}</td></tr> {{-- Catatan pengiriman --}}
                                                             </table>
                                                         </div>
                                                     </div>
@@ -317,12 +319,12 @@
                     </table>
                 </div>
 
-                {{-- Pagination Links --}}
+                {{-- Tautan paginasi untuk daftar pengiriman --}}
                 <div class="mt-3">
                     {{ $shippingOrders->links() }}
                 </div>
             @else
-                {{-- Tampilan jika tidak ada shipping order --}}
+                {{-- Tampilan jika tidak ada data pengiriman --}}
                 <div class="text-center py-4">
                     <i class="bi bi-truck" style="font-size: 4rem; color: #ccc;"></i>
                     <h4 class="mt-3">Belum Ada Pengiriman</h4>
@@ -332,7 +334,7 @@
         </div>
     </div>
 
-    {{-- Modal Create Shipping Order --}}
+    {{-- Modal untuk membuat shipping order baru --}}
     <div class="modal fade" id="createShippingModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -343,24 +345,24 @@
                 <form action="{{ route('admin.shipping.store') }}" method="POST">
                     @csrf
                     <div class="modal-body">
-                        {{-- Pilih Transaksi --}}
+                        {{-- Pilihan transaksi untuk shipping order --}}
                         <div class="mb-3">
                             <label for="transaksi_id" class="form-label">Transaksi <span class="text-danger">*</span></label>
                             <select id="transaksi_id" name="transaksi_id" class="form-control" required>
                                 <option value="">Pilih Transaksi...</option>
-                                {{-- Tampilkan transaksi yang belum ada shipping order --}}
+                                {{-- Memuat transaksi yang belum memiliki shipping order --}}
                                 @php
                                     $transaksis = \App\Models\Transaksi::with('user')->whereDoesntHave('shippingOrder')->get();
                                 @endphp
                                 @foreach($transaksis as $transaksi)
                                     <option value="{{ $transaksi->id }}">
-                                        ID: {{ $transaksi->id }} - {{ $transaksi->user->name }} (Rp {{ number_format($transaksi->total, 0, ',', '.') }})
+                                        ID: {{ $transaksi->id }} - {{ $transaksi->user->name }} (Rp {{ number_format($transaksi->total, 0, ',', '.') }}) {{-- Opsi transaksi --}}
                                     </option>
                                 @endforeach
                             </select>
                         </div>
 
-                        {{-- No. Resi --}}
+                        {{-- Input nomor resi pengiriman --}}
                         <div class="mb-3">
                             <label for="tracking_number" class="form-label">Nomor Resi <span class="text-danger">*</span></label>
                             <input type="text" 
@@ -371,7 +373,7 @@
                                    placeholder="Contoh: JNE123456789">
                         </div>
 
-                        {{-- Kurir --}}
+                        {{-- Pilihan kurir pengiriman --}}
                         <div class="mb-3">
                             <label for="courier" class="form-label">Kurir <span class="text-danger">*</span></label>
                             <select id="courier" name="courier" class="form-control" required>
@@ -386,7 +388,7 @@
                             </select>
                         </div>
 
-                        {{-- Catatan --}}
+                        {{-- Input catatan pengiriman --}}
                         <div class="mb-3">
                             <label for="notes" class="form-label">Catatan</label>
                             <textarea id="notes" 
@@ -409,8 +411,9 @@
 
 @push('scripts')
 <script>
+// Inisialisasi fungsi saat dokumen dimuat
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-hide alerts after 5 seconds
+    // Menyembunyikan alert secara otomatis setelah 5 detik
     const alerts = document.querySelectorAll('.alert-dismissible');
     alerts.forEach(alert => {
         setTimeout(() => {
@@ -419,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 
-    // Auto-set today's date for shipped status
+    // Mengatur tanggal otomatis berdasarkan status pengiriman
     const statusSelects = document.querySelectorAll('select[name="status"]');
     statusSelects.forEach(select => {
         select.addEventListener('change', function() {
@@ -427,16 +430,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const shippedDateInput = document.getElementById('shipped_date' + shippingId);
             const deliveredDateInput = document.getElementById('delivered_date' + shippingId);
             
+            // Mengatur tanggal kirim otomatis jika status shipped
             if (this.value === 'shipped' && !shippedDateInput.value) {
                 shippedDateInput.value = new Date().toISOString().split('T')[0];
             }
             
+            // Mengatur tanggal kirim dan sampai otomatis jika status delivered
             if (this.value === 'delivered') {
                 if (!shippedDateInput.value) {
-                    shippedDateInput.value = new Date(Date.now() - 86400000).toISOString().split('T')[0]; // Yesterday
+                    shippedDateInput.value = new Date(Date.now() - 86400000).toISOString().split('T')[0]; // Kemarin
                 }
                 if (!deliveredDateInput.value) {
-                    deliveredDateInput.value = new Date().toISOString().split('T')[0]; // Today
+                    deliveredDateInput.value = new Date().toISOString().split('T')[0]; // Hari ini
                 }
             }
         });

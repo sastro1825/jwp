@@ -1,20 +1,23 @@
 @extends('layouts.app')
 
+{{-- Section konten utama --}}
 @section('content')
 <div class="container">
     <div class="row">
         <div class="col-12">
+            {{-- Judul halaman --}}
             <h1 class="mb-4">Keranjang Belanja</h1>
             <p class="text-muted">
                 Kelola produk dalam keranjang Anda sebelum checkout
                 @if(auth()->user()->role === 'pemilik_toko')
+                    {{-- Badge untuk pemilik toko --}}
                     <span class="badge bg-success ms-2">Pemilik Toko</span>
                 @endif
             </p>
         </div>
     </div>
 
-    {{-- Alert Messages --}}
+    {{-- Pesan sukses --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -22,6 +25,7 @@
         </div>
     @endif
 
+    {{-- Pesan error --}}
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
@@ -29,7 +33,7 @@
         </div>
     @endif
 
-    {{-- Navigation Breadcrumb --}}
+    {{-- Navigasi breadcrumb --}}
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
@@ -40,7 +44,7 @@
     </nav>
 
     @if($keranjangItems->count() > 0)
-        {{-- Tabel Keranjang --}}
+        {{-- Tabel daftar item keranjang --}}
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">
@@ -66,19 +70,21 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="me-3">
-                                            {{-- Perbaikan gambar untuk item toko kategori --}}
+                                            {{-- Logika penampilan gambar berdasarkan tipe item --}}
                                             @if($item->item_type === 'toko_kategori')
-                                                {{-- Cari gambar dari toko kategori berdasarkan nama --}}
                                                 @php
+                                                    // Mengambil nama kategori dari nama item
                                                     $namaKategori = explode(' (Toko:', $item->nama_item)[0];
                                                     $tokoKategori = \App\Models\TokoKategori::where('nama', $namaKategori)->first();
                                                 @endphp
                                                 @if($tokoKategori && $tokoKategori->gambar)
+                                                    {{-- Gambar kategori toko --}}
                                                     <img src="{{ asset('storage/' . $tokoKategori->gambar) }}" 
                                                          alt="{{ $item->nama_item }}" 
                                                          class="rounded"
                                                          style="width: 60px; height: 60px; object-fit: cover;">
                                                 @else
+                                                    {{-- Placeholder jika gambar toko tidak ada --}}
                                                     <div class="bg-light rounded d-flex align-items-center justify-content-center" 
                                                          style="width: 60px; height: 60px;">
                                                         <i class="bi bi-shop text-success"></i>
@@ -91,7 +97,7 @@
                                                      class="rounded"
                                                      style="width: 60px; height: 60px; object-fit: cover;">
                                             @else
-                                                {{-- Placeholder jika tidak ada gambar --}}
+                                                {{-- Placeholder jika gambar tidak ada --}}
                                                 <div class="bg-light rounded d-flex align-items-center justify-content-center" 
                                                      style="width: 60px; height: 60px;">
                                                     <i class="bi bi-heart-pulse text-primary"></i>
@@ -100,13 +106,13 @@
                                         </div>
                                         <div>
                                             <h6 class="mb-1">{{ $item->nama_item }}</h6>
-                                            {{-- Perbaikan timezone untuk jam --}}
+                                            {{-- Waktu penambahan item dengan timezone Jakarta --}}
                                             <small class="text-muted">Ditambahkan: {{ $item->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y H:i') }} WIB</small>
                                         </div>
                                     </div>
                                 </td>
                                 <td>
-                                    {{-- Perbaikan kategori untuk toko kategori --}}
+                                    {{-- Penampilan kategori berdasarkan tipe item --}}
                                     @if($item->item_type === 'toko_kategori')
                                         <span class="badge bg-success">Toko Mitra</span>
                                         <br><small class="text-muted">{{ explode(' (Toko:', $item->nama_item)[0] }}</small>
@@ -121,7 +127,7 @@
                                     <strong>Rp {{ number_format((float)$item->harga_item, 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="text-center">
-                                    {{-- Form Update Jumlah --}}
+                                    {{-- Form untuk memperbarui jumlah item --}}
                                     <form action="{{ 
                                         auth()->user()->role === 'pemilik_toko' 
                                             ? route('pemilik-toko.keranjang.update', $item->id) 
@@ -149,7 +155,7 @@
                                     </strong>
                                 </td>
                                 <td class="text-center">
-                                    {{-- Form Hapus Item --}}
+                                    {{-- Form untuk menghapus item --}}
                                     <form action="{{ 
                                         auth()->user()->role === 'pemilik_toko' 
                                             ? route('pemilik-toko.keranjang.hapus', $item->id) 
@@ -173,10 +179,10 @@
             </div>
         </div>
 
-        {{-- Summary dan Checkout --}}
+        {{-- Ringkasan dan checkout --}}
         <div class="row mt-4">
             <div class="col-md-8">
-                {{-- Info Pengiriman --}}
+                {{-- Informasi pengiriman --}}
                 <div class="card">
                     <div class="card-header">
                         <h6 class="mb-0"><i class="bi bi-truck"></i> Informasi Pengiriman</h6>
@@ -195,7 +201,7 @@
             </div>
             
             <div class="col-md-4">
-                {{-- Total dan Checkout --}}
+                {{-- Ringkasan pesanan dan tombol checkout --}}
                 <div class="card">
                     <div class="card-header">
                         <h6 class="mb-0"><i class="bi bi-calculator"></i> Ringkasan Pesanan</h6>
@@ -215,7 +221,7 @@
                             <strong class="text-primary">Rp {{ number_format((float)$totalHarga, 0, ',', '.') }}</strong>
                         </div>
                         
-                        {{-- Tombol Checkout --}}
+                        {{-- Tombol untuk membuka modal checkout --}}
                         <div class="d-grid">
                             <button type="button" 
                                     class="btn btn-primary btn-lg" 
@@ -229,7 +235,7 @@
             </div>
         </div>
 
-        {{-- Debug info untuk development --}}
+        {{-- Informasi debug jika mode debug aktif --}}
         @if(config('app.debug'))
             <div class="alert alert-info mt-3">
                 <strong>Debug COD Info:</strong><br>
@@ -240,7 +246,7 @@
             </div>
         @endif
     @else
-        {{-- Keranjang Kosong --}}
+        {{-- Tampilan jika keranjang kosong --}}
         <div class="card">
             <div class="card-body text-center py-5">
                 <i class="bi bi-cart-x" style="font-size: 5rem; color: #ccc;"></i>
@@ -253,7 +259,7 @@
         </div>
     @endif
 
-    {{-- Navigation Buttons --}}
+    {{-- Tombol navigasi tambahan --}}
     <div class="mt-4">
         <a href="{{ route('customer.area') }}" class="btn btn-outline-primary">
             <i class="bi bi-arrow-left"></i> Lanjut Belanja
@@ -271,7 +277,7 @@
     </div>
 </div>
 
-{{-- Modal Checkout --}}
+{{-- Modal untuk proses checkout --}}
 @if($keranjangItems->count() > 0)
 <div class="modal fade" id="checkoutModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -291,7 +297,7 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
-                            {{-- Informasi Pengiriman --}}
+                            {{-- Form informasi pengiriman --}}
                             <h6>Informasi Pengiriman</h6>
                             <div class="mb-3">
                                 <label for="alamat_pengiriman" class="form-label">Alamat Pengiriman <span class="text-danger">*</span></label>
@@ -332,7 +338,7 @@
                         </div>
                         
                         <div class="col-md-6">
-                            {{-- Ringkasan Pesanan --}}
+                            {{-- Ringkasan pesanan di modal --}}
                             <h6>Ringkasan Pesanan</h6>
                             <div class="card bg-light">
                                 <div class="card-body">
@@ -381,9 +387,10 @@
 @endif
 @endsection
 
+{{-- Script JavaScript untuk interaksi --}}
 @push('scripts')
 <script>
-// Function untuk menambah jumlah
+// Fungsi untuk menambah jumlah item
 function increaseQuantity(itemId) {
     const input = document.getElementById('jumlah_' + itemId);
     const currentValue = parseInt(input.value);
@@ -393,7 +400,7 @@ function increaseQuantity(itemId) {
     }
 }
 
-// Function untuk mengurangi jumlah
+// Fungsi untuk mengurangi jumlah item
 function decreaseQuantity(itemId) {
     const input = document.getElementById('jumlah_' + itemId);
     const currentValue = parseInt(input.value);
@@ -403,22 +410,21 @@ function decreaseQuantity(itemId) {
     }
 }
 
-// Auto submit form ketika input jumlah berubah
+// Inisialisasi saat dokumen dimuat
 document.addEventListener('DOMContentLoaded', function() {
+    // Menangani submit otomatis pada form update jumlah
     const updateForms = document.querySelectorAll('.update-form');
     updateForms.forEach(form => {
         const submitBtn = form.querySelector('input[name="jumlah"]');
         submitBtn.addEventListener('change', function() {
-            // Add loading state
+            // Menambahkan efek loading
             this.style.opacity = '0.5';
             this.disabled = true;
-            
-            // Submit form
             form.submit();
         });
     });
 
-    // Auto hide alerts
+    // Menyembunyikan alert secara otomatis setelah 5 detik
     const alerts = document.querySelectorAll('.alert-dismissible');
     alerts.forEach(alert => {
         setTimeout(() => {
@@ -427,20 +433,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 
-    // Validation untuk checkout form dengan COD check
+    // Validasi form checkout
     const checkoutForm = document.querySelector('#checkoutModal form');
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', function(e) {
             const alamat = document.getElementById('alamat_pengiriman').value.trim();
             const metode = document.getElementById('metode_pembayaran').value;
             
+            // Validasi alamat dan metode pembayaran
             if (!alamat || !metode) {
                 e.preventDefault();
                 alert('Mohon lengkapi alamat pengiriman dan metode pembayaran.');
                 return false;
             }
 
-            // Check jika pilih COD tapi tidak tersedia
+            // Validasi COD jika tidak tersedia
             @if(!($canUseCOD ?? false))
                 if (metode === 'postpaid') {
                     e.preventDefault();
@@ -449,13 +456,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             @endif
             
-            // Add loading state to submit button
+            // Efek loading pada tombol submit
             const submitBtn = this.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Memproses...';
         });
         
-        // Real-time validation untuk metode pembayaran
+        // Validasi real-time untuk metode pembayaran
         const metodeSelect = document.getElementById('metode_pembayaran');
         if (metodeSelect) {
             metodeSelect.addEventListener('change', function() {

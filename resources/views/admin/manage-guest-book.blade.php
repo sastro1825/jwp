@@ -2,13 +2,14 @@
 
 @section('content')
 <div class="container">
-    {{-- Tombol kembali ke dashboard dipindah ke atas --}}
+    {{-- Tombol kembali ke dashboard --}}
     <div class="mb-3">
         <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i> Kembali ke Dashboard
         </a>
     </div>
 
+    {{-- Judul dan deskripsi halaman --}}
     <div class="row">
         <div class="col-12">
             <h1 class="mb-4">Kelola Guest Book & Feedback</h1>
@@ -16,7 +17,7 @@
         </div>
     </div>
 
-    {{-- Alert Messages --}}
+    {{-- Menampilkan pesan sukses jika ada --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -24,6 +25,7 @@
         </div>
     @endif
 
+    {{-- Menampilkan pesan error jika ada --}}
     @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ session('error') }}
@@ -31,8 +33,9 @@
         </div>
     @endif
 
-    {{-- Statistik Feedback --}}
+    {{-- Statistik feedback dalam bentuk kartu --}}
     <div class="row mb-4">
+        {{-- Kartu untuk total feedback pending --}}
         <div class="col-md-3 mb-3">
             <div class="card bg-warning text-white">
                 <div class="card-body">
@@ -49,6 +52,7 @@
                 </div>
             </div>
         </div>
+        {{-- Kartu untuk total feedback disetujui --}}
         <div class="col-md-3 mb-3">
             <div class="card bg-success text-white">
                 <div class="card-body">
@@ -65,6 +69,7 @@
                 </div>
             </div>
         </div>
+        {{-- Kartu untuk total feedback ditolak --}}
         <div class="col-md-3 mb-3">
             <div class="card bg-danger text-white">
                 <div class="card-body">
@@ -81,6 +86,7 @@
                 </div>
             </div>
         </div>
+        {{-- Kartu untuk total semua feedback --}}
         <div class="col-md-3 mb-3">
             <div class="card bg-info text-white">
                 <div class="card-body">
@@ -99,7 +105,7 @@
         </div>
     </div>
 
-    {{-- Tabel Semua Feedback --}}
+    {{-- Tabel untuk menampilkan semua feedback --}}
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0">
@@ -107,9 +113,11 @@
             </h5>
         </div>
         <div class="card-body">
+            {{-- Cek apakah ada feedback untuk ditampilkan --}}
             @if($allFeedbacks->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
+                        {{-- Header tabel --}}
                         <thead class="table-dark">
                             <tr>
                                 <th>ID</th>
@@ -122,6 +130,7 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {{-- Looping untuk menampilkan setiap feedback --}}
                             @foreach($allFeedbacks as $feedback)
                             <tr>
                                 <td>{{ $feedback->id }}</td>
@@ -131,6 +140,7 @@
                                     <small class="text-muted">{{ $feedback->getSenderEmail() }}</small>
                                 </td>
                                 <td>
+                                    {{-- Menampilkan tipe pengirim (Customer/Visitor) --}}
                                     @if($feedback->isFromCustomer())
                                         <span class="badge bg-primary">Customer</span>
                                     @else
@@ -140,6 +150,7 @@
                                 <td>
                                     <div style="max-width: 300px;">
                                         {{ Str::limit($feedback->message, 100) }}
+                                        {{-- Tombol untuk melihat pesan lengkap jika pesan panjang --}}
                                         @if(strlen($feedback->message) > 100)
                                             <button class="btn btn-sm btn-link p-0" 
                                                     data-bs-toggle="modal" 
@@ -150,6 +161,7 @@
                                     </div>
                                 </td>
                                 <td>
+                                    {{-- Menampilkan status feedback --}}
                                     @if($feedback->status === 'pending')
                                         <span class="badge bg-warning">Pending</span>
                                     @elseif($feedback->status === 'approved')
@@ -160,15 +172,16 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
+                                        {{-- Tombol aksi untuk feedback dengan status pending --}}
                                         @if($feedback->status === 'pending')
-                                            {{-- Approve Button --}}
+                                            {{-- Form untuk menyetujui feedback --}}
                                             <form action="{{ route('admin.guestbook.approve', $feedback->id) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-success" title="Approve">
                                                     <i class="bi bi-check"></i>
                                                 </button>
                                             </form>
-                                            {{-- Reject Button --}}
+                                            {{-- Form untuk menolak feedback --}}
                                             <form action="{{ route('admin.guestbook.reject', $feedback->id) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-warning" title="Reject">
@@ -176,7 +189,7 @@
                                                 </button>
                                             </form>
                                         @endif
-                                        {{-- Delete Button --}}
+                                        {{-- Form untuk menghapus feedback --}}
                                         <form action="{{ route('admin.guestbook.delete', $feedback->id) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
@@ -189,7 +202,7 @@
                                 </td>
                             </tr>
 
-                            {{-- Modal untuk Pesan Lengkap --}}
+                            {{-- Modal untuk menampilkan pesan lengkap --}}
                             @if(strlen($feedback->message) > 100)
                                 <div class="modal fade" id="messageModal{{ $feedback->id }}" tabindex="-1">
                                     <div class="modal-dialog">
@@ -215,6 +228,7 @@
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                                                {{-- Tombol aksi di modal untuk feedback pending --}}
                                                 @if($feedback->status === 'pending')
                                                     <form action="{{ route('admin.guestbook.approve', $feedback->id) }}" method="POST" class="d-inline">
                                                         @csrf
@@ -239,11 +253,12 @@
                     </table>
                 </div>
 
-                {{-- Pagination --}}
+                {{-- Navigasi paginasi --}}
                 <div class="mt-3">
                     {{ $allFeedbacks->links() }}
                 </div>
             @else
+                {{-- Pesan jika tidak ada feedback --}}
                 <div class="text-center py-4">
                     <i class="bi bi-chat-left-text" style="font-size: 4rem; color: #ccc;"></i>
                     <h4 class="mt-3">Belum Ada Feedback</h4>

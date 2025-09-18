@@ -6,63 +6,46 @@ use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
 {
-    /**
-     * The application's global HTTP middleware stack.
-     *
-     * These middleware are run during every request to your application.
-     *
-     * @var array<int, class-string|string>
-     */
-    protected $middleware = [
-        // \App\Http\Middleware\TrustHosts::class,
-        \App\Http\Middleware\TrustProxies::class,
-        \Illuminate\Http\Middleware\HandleCors::class,
-        \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
-        \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
-        \App\Http\Middleware\TrimStrings::class,
-        \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+      protected $middleware = [
+        // \App\Http\Middleware\TrustHosts::class, // Middleware untuk mempercayai host tertentu (dinonaktifkan)
+        \App\Http\Middleware\TrustProxies::class, // Middleware untuk mempercayai proxy
+        \Illuminate\Http\Middleware\HandleCors::class, // Middleware untuk menangani CORS
+        \App\Http\Middleware\PreventRequestsDuringMaintenance::class, // Middleware untuk mencegah permintaan saat mode pemeliharaan
+        \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class, // Middleware untuk memvalidasi ukuran data POST
+        \App\Http\Middleware\TrimStrings::class, // Middleware untuk menghapus spasi berlebih dari input
+        \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class, // Middleware untuk mengubah string kosong menjadi null
     ];
 
-    /**
-     * The application's route middleware groups.
-     *
-     * @var array<string, array<int, class-string|string>>
-     */
+    // Grup middleware untuk rute tertentu
     protected $middlewareGroups = [
-        'web' => [
-            \App\Http\Middleware\EncryptCookies::class,
-            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-            \Illuminate\Session\Middleware\StartSession::class,
-            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-            \App\Http\Middleware\VerifyCsrfToken::class,
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        'web' => [ // Grup middleware untuk rute web
+            \App\Http\Middleware\EncryptCookies::class, // Mengenkripsi cookie
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class, // Menambahkan cookie yang antri ke respons
+            \Illuminate\Session\Middleware\StartSession::class, // Memulai sesi
+            \Illuminate\View\Middleware\ShareErrorsFromSession::class, // Membagikan error dari sesi ke view
+            \App\Http\Middleware\VerifyCsrfToken::class, // Memverifikasi token CSRF
+            \Illuminate\Routing\Middleware\SubstituteBindings::class, // Mengganti binding pada rute
         ],
 
-        'api' => [
-            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
-            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        'api' => [ // Grup middleware untuk rute API
+            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, // Memastikan permintaan API stateful (dinonaktifkan)
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api', // Membatasi jumlah permintaan API
+            \Illuminate\Routing\Middleware\SubstituteBindings::class, // Mengganti binding pada rute
         ],
     ];
 
-    /**
-     * The application's route middleware aliases.
-     *
-     * Aliases may be registered here.
-     *
-     * @var array<string, class-string|string>
-     */
+    // Alias untuk middleware yang dapat digunakan pada rute
     protected $middlewareAliases = [
-        'auth' => \App\Http\Middleware\Authenticate::class,
-        'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
-        'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class,
-        'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class,
-        'can' => \Illuminate\Auth\Middleware\Authorize::class,
-        'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-        'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class,
-        'signed' => \App\Http\Middleware\ValidateSignature::class,
-        'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
-        'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'role' => \App\Http\Middleware\CheckRole::class, // Tambahan untuk role admin/customer
+        'auth' => \App\Http\Middleware\Authenticate::class, // Middleware untuk autentikasi pengguna
+        'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class, // Middleware untuk autentikasi dasar
+        'auth.session' => \Illuminate\Session\Middleware\AuthenticateSession::class, // Middleware untuk autentikasi sesi
+        'cache.headers' => \Illuminate\Http\Middleware\SetCacheHeaders::class, // Middleware untuk mengatur header cache
+        'can' => \Illuminate\Auth\Middleware\Authorize::class, // Middleware untuk otorisasi akses
+        'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class, // Middleware untuk mengarahkan pengguna terautentikasi
+        'password.confirm' => \Illuminate\Auth\Middleware\RequirePassword::class, // Middleware untuk meminta konfirmasi kata sandi
+        'signed' => \App\Http\Middleware\ValidateSignature::class, // Middleware untuk memvalidasi tanda tangan URL
+        'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class, // Middleware untuk membatasi jumlah permintaan
+        'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class, // Middleware untuk memastikan email terverifikasi
+        'role' => \App\Http\Middleware\CheckRole::class, // Middleware untuk memeriksa peran admin/customer
     ];
 }

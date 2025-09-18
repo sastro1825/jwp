@@ -5,56 +5,52 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+// Kelas untuk mengelola permohonan pembukaan toko
 class TokoRequest extends Model
 {
     use HasFactory;
 
-    protected $table = 'toko_requests'; // Nama tabel untuk permohonan toko
+    // Nama tabel yang digunakan untuk menyimpan data permohonan toko
+    protected $table = 'toko_requests';
 
-    /**
-     * The attributes that are mass assignable - untuk permohonan pembukaan toko
-     */
+    // Atribut yang dapat diisi secara massal untuk permohonan toko
     protected $fillable = [
-        'user_id',           // ID customer yang mengajukan
-        'nama_toko',         // Nama toko yang diinginkan
-        'deskripsi_toko',    // Deskripsi toko
-        'kategori_usaha',    // Kategori usaha (kesehatan, dll)
-        'alamat_toko',       // Alamat toko fisik
-        'no_telepon',        // No telepon toko
-        'alasan_permohonan', // Alasan mengajukan permohonan
-        'status',            // Status: pending, approved, rejected
-        'catatan_admin'      // Catatan admin saat review
+        'user_id', 
+        'nama_toko',
+        'deskripsi_toko', 
+        'kategori_usaha',  
+        'alamat_toko',     
+        'no_telepon',      
+        'alasan_permohonan',
+        'status',   
+        'catatan_admin'    
     ];
 
-    /**
-     * Relasi ke user yang mengajukan permohonan
-     */
+    // Relasi ke model User yang mengajukan permohonan
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Scope untuk filter berdasarkan status
-     */
+    // Scope untuk memfilter permohonan dengan status pending
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
     }
 
+    // Scope untuk memfilter permohonan dengan status approved
     public function scopeApproved($query)
     {
         return $query->where('status', 'approved');
     }
 
+    // Scope untuk memfilter permohonan dengan status rejected
     public function scopeRejected($query)
     {
         return $query->where('status', 'rejected');
     }
 
-    /**
-     * Accessor untuk mendapatkan status badge
-     */
+    // Accessor untuk mendapatkan badge status dalam format HTML
     public function getStatusBadgeAttribute()
     {
         $badges = [
@@ -66,9 +62,7 @@ class TokoRequest extends Model
         return $badges[$this->status] ?? '<span class="badge bg-secondary">Unknown</span>';
     }
 
-    /**
-     * Accessor untuk format tanggal pengajuan
-     */
+    // Accessor untuk memformat tanggal pembuatan permohonan
     public function getFormattedCreatedAtAttribute()
     {
         return $this->created_at->format('d/m/Y H:i');
