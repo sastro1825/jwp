@@ -1,3 +1,5 @@
+@extends('layouts.app')
+
 @section('content')
 {{-- Bagian konten utama untuk form permohonan toko --}}
 <div class="container">
