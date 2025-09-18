@@ -61,9 +61,7 @@
         <p>Pembelian Anda telah berhasil diproses dan laporan detail transaksi telah dilampirkan dalam format PDF pada email ini.</p>
 
         {{-- Informasi detail transaksi --}}
-        <
-
-div class="info-box">
+        <div class="info-box">
             <h4>Informasi Pembelian:</h4>
             <ul>
                 {{-- Menampilkan nomor transaksi --}}
@@ -75,9 +73,7 @@ div class="info-box">
                 {{-- Menampilkan email pelanggan --}}
                 <li><strong>Email:</strong> {{ $customer->email }}</li>
                 {{-- Menampilkan total pembayaran dengan format Rupiah --}}
-                <li><strong>Total Pembayaran …
-
-:</strong> Rp {{ number_format($transaksi->total, 0, ',', '.') }}</li>
+                <li><strong>Total Pembayaran:</strong> Rp {{ number_format($transaksi->total, 0, ',', '.') }}</li>
                 {{-- Menampilkan metode pembayaran --}}
                 <li><strong>Metode Pembayaran:</strong> {{ $transaksi->metode_pembayaran == 'prepaid' ? 'Prepaid (Kartu/PayPal)' : 'COD (Cash On Delivery)' }}</li>
             </ul>
@@ -110,7 +106,7 @@ div class="info-box">
     </div>
 
     {{-- Bagian footer email --}}
-    <div style="margin-top: 30px; text-align: center; font-size: 10px;">
+    <div class="footer">
         {{-- Menampilkan waktu pembuatan dokumen --}}
         <p>Dokumen dibuat otomatis pada {{ now()->setTimezone('Asia/Jakarta')->format('d/m/Y H:i:s') }} WIB</p>
         <p>Tukupedia | fajarstudent28@gmail.com</p>
